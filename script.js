@@ -1,3 +1,42 @@
+// Typewriter Effect
+(function() {
+  const nameText = document.querySelector('.name-text');
+  const cursor = document.querySelector('.typewriter-cursor');
+  const fullText = 'george liu';
+  
+  if (!nameText) return;
+  
+  const respectsReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  
+  if (respectsReducedMotion) {
+    // If reduced motion, just show the text immediately
+    nameText.textContent = fullText;
+    if (cursor) cursor.style.display = 'none';
+  } else {
+    // Typewriter effect
+    let currentIndex = 0;
+    const typingSpeed = 120; // milliseconds per character
+    
+    function typeCharacter() {
+      if (currentIndex < fullText.length) {
+        nameText.textContent += fullText[currentIndex];
+        currentIndex++;
+        setTimeout(typeCharacter, typingSpeed);
+      } else {
+        // Remove cursor after typing is complete
+        if (cursor) {
+          setTimeout(() => {
+            cursor.style.display = 'none';
+          }, 500);
+        }
+      }
+    }
+    
+    // Start typing after a short delay
+    setTimeout(typeCharacter, 300);
+  }
+})();
+
 // Theme Toggle
 (function() {
   const themeToggle = document.querySelector('.theme-toggle');

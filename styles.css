@@ -227,6 +227,25 @@ body > * {
   text-transform: lowercase;
 }
 
+.typewriter-cursor {
+  font-family: var(--font-mono);
+  font-size: clamp(2.5rem, 8vw, 6rem);
+  color: var(--accent);
+  animation: blink 1s infinite;
+  margin-left: 0.1em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .typewriter-cursor {
+    animation: none;
+  }
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
 /* Mascot */
 .mascot {
   position: absolute;
