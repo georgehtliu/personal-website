@@ -8,6 +8,12 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <!-- Background Stars -->
+  <div class="stars-container" aria-hidden="true"></div>
+  
+  <!-- Animated Ball Cursor -->
+  <div class="animated-cursor"></div>
+  
   <!-- Header -->
   <header class="header">
     <nav class="header-nav">
@@ -18,31 +24,33 @@
     </nav>
   </header>
 
-  <!-- Hero Section -->
-  <section class="hero">
-    <div class="hero-name">
-      <span class="name-text"></span><span class="typewriter-cursor">_</span>
-    </div>
-  </section>
+  <!-- Content Container (invisible box) -->
+  <div class="content-container">
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="hero-name">
+        <span class="name-text"></span><span class="typewriter-cursor">_</span>
+      </div>
+    </section>
 
-  <!-- Bio Section -->
-  <section class="bio">
-    <p>
-      building things on the web. currently working on <a href="#" class="highlight-link">developer tools</a> and 
-      <a href="#" class="highlight-link">design systems</a>. interested in 
-      <span class="highlight-tag">minimalism</span>, 
-      <span class="highlight-tag">accessibility</span>, and 
-      <span class="highlight-tag">craft</span>.
-    </p>
-    <p>
-      sometimes i write about code, sometimes about other things. you can find my thoughts 
-      <a href="#" class="highlight-link">here</a> or get in touch 
-      <a href="#" class="highlight-link">elsewhere</a>.
-    </p>
-  </section>
+    <!-- Bio Section -->
+    <section class="bio">
+      <p>
+        building things on the web. currently working on <a href="#" class="highlight-link">developer tools</a> and 
+        <a href="#" class="highlight-link">design systems</a>. interested in 
+        <span class="highlight-tag">minimalism</span>, 
+        <span class="highlight-tag">accessibility</span>, and 
+        <span class="highlight-tag">craft</span>.
+      </p>
+      <p>
+        sometimes i write about code, sometimes about other things. you can find my thoughts 
+        <a href="#" class="highlight-link">here</a> or get in touch 
+        <a href="#" class="highlight-link">elsewhere</a>.
+      </p>
+    </section>
 
-  <!-- Timeline Section -->
-  <section class="timeline">
+    <!-- Timeline Section -->
+    <section class="timeline">
     <div class="timeline-item">
       <div class="timeline-icon">
         <div class="icon-circle">
@@ -127,6 +135,10 @@
       <div class="timeline-year">jan 2022 – apr 2022</div>
     </div>
   </section>
+  </div>
+
+  <!-- Dog GIF (follows cursor) -->
+  <img src="space-dog.gif" alt="" class="dog-img" aria-hidden="true">
 
   <!-- Footer -->
   <footer class="footer">

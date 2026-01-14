@@ -97,40 +97,45 @@ body {
   color: var(--text-primary);
   background-color: var(--bg);
   min-height: 100vh;
-  padding: var(--container-padding);
+  padding: calc(var(--container-padding) + 20vh) var(--container-padding);
   position: relative;
 }
 
-body::before {
-  content: '';
+/* Background Stars */
+.stars-container {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-image: url('background-pattern.svg');
-  background-size: 200px 200px;
-  background-position: 0 0;
-  background-repeat: repeat;
-  opacity: 1;
   pointer-events: none;
-  z-index: 0;
-}
-
-[data-theme="light"] body::before {
-  background-image: url('background-pattern-light.svg');
-  opacity: 1;
-}
-
-body > * {
-  position: relative;
   z-index: 1;
+  overflow: hidden;
 }
+
+.star {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  transition: opacity 0.3s ease;
+}
+
+.star svg {
+  display: block;
+}
+
 
 /* Container */
 .container {
   max-width: clamp(42rem, 80vw, 64rem);
   margin: 0 auto;
+}
+
+/* Content Container (invisible box) */
+.content-container {
+  position: relative;
+  max-width: clamp(42rem, 80vw, 64rem);
+  margin: 0 auto;
+  /* No visible styling - just a tracking container */
 }
 
 /* Header */
@@ -281,6 +286,53 @@ body > * {
   max-width: clamp(42rem, 80vw, 64rem);
   margin: 0 auto var(--section-gap);
   padding: 0 var(--container-padding);
+  position: relative;
+}
+
+.dog-img {
+  position: fixed;
+  width: 180px;
+  height: 180px;
+  opacity: 0.8;
+  pointer-events: none;
+  z-index: 1000;
+  transition: transform 0.1s ease-out;
+  transform-origin: center center;
+  object-fit: contain;
+  mix-blend-mode: screen;
+  image-rendering: auto;
+}
+
+@media (max-width: 1200px) {
+  .dog-img {
+    display: none;
+  }
+}
+
+/* Hide default cursor */
+* {
+  cursor: none !important;
+}
+
+/* Show normal cursor when inside content box */
+body.cursor-inside-content,
+body.cursor-inside-content * {
+  cursor: auto !important;
+}
+
+/* Animated ball cursor element */
+.animated-cursor {
+  position: fixed;
+  width: 56px;
+  height: 56px;
+  pointer-events: none;
+  z-index: 9999;
+  background-image: url('ball.gif');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  transform: translate(-50%, -50%);
+  transition: transform 0.05s ease-out;
 }
 
 .timeline-item {
@@ -413,7 +465,7 @@ body > * {
 .footer {
   max-width: clamp(42rem, 80vw, 64rem);
   margin: 0 auto;
-  padding: var(--section-gap) var(--container-padding) var(--container-padding);
+  padding: var(--section-gap) var(--container-padding) calc(var(--container-padding) + 20vh);
   display: flex;
   justify-content: space-between;
   align-items: center;
