@@ -1152,19 +1152,51 @@
   // Export leash status checker
   window.isDogLeashed = () => isLeashed;
   
-  // Woof functionality - show "woof" text when dog is clicked
-  function createWoofText(x, y) {
-    const woofText = document.createElement('div');
-    woofText.className = 'woof-text';
-    woofText.textContent = 'woof';
-    woofText.style.left = x + 'px';
-    woofText.style.top = y + 'px';
-    document.body.appendChild(woofText);
+  // Dog sayings - random words the dog can say when clicked
+  const dogSayings = [
+    'woof',
+    'bark',
+    'arf',
+    'ruff',
+    'grr',
+    'sniff',
+    'pant',
+    'wag',
+    'treat?',
+    'play?',
+    'hi!',
+    'good boy!',
+    'hungry!',
+    'ball?',
+    'walk?',
+    'pet me!',
+    'scratch?',
+    'belly rub?',
+    'zoomies!',
+    'happy!',
+    'excited!'
+  ];
+  
+  // Cooldown for dog clicks (4 seconds)
+  let lastDogClickTime = 0;
+  const dogClickCooldown = 4000; // 4 seconds in milliseconds
+  
+  // Function to show random dog text when dog is clicked
+  function createDogText(x, y) {
+    // Randomly select a saying
+    const randomSaying = dogSayings[Math.floor(Math.random() * dogSayings.length)];
+    
+    const dogText = document.createElement('div');
+    dogText.className = 'woof-text';
+    dogText.textContent = randomSaying;
+    dogText.style.left = x + 'px';
+    dogText.style.top = y + 'px';
+    document.body.appendChild(dogText);
     
     // Remove after animation completes
     setTimeout(() => {
-      if (woofText.parentNode) {
-        woofText.remove();
+      if (dogText.parentNode) {
+        dogText.remove();
       }
     }, 1500);
   }
@@ -1174,16 +1206,68 @@
     e.preventDefault();
     e.stopPropagation();
     
+    // Check cooldown
+    const currentTime = Date.now();
+    if (currentTime - lastDogClickTime < dogClickCooldown) {
+      return; // Still on cooldown, ignore click
+    }
+    
+    // Update last click time
+    lastDogClickTime = currentTime;
+    
+    // Store current transform to preserve orientation/scale
+    const currentTransform = dog.style.transform || '';
+    
+    // Animate bubble-up effect
+    const duration = 400; // 400ms animation
+    const startTime = performance.now();
+    const startScale = 1;
+    const peakScale = 1.15;
+    
+    function animateBubble() {
+      const elapsed = performance.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      // Easing function for smooth animation
+      let bubbleScale;
+      if (progress < 0.5) {
+        // Growing phase (0 to 0.5)
+        const growProgress = progress * 2;
+        bubbleScale = startScale + (peakScale - startScale) * growProgress;
+      } else {
+        // Shrinking phase (0.5 to 1)
+        const shrinkProgress = (progress - 0.5) * 2;
+        bubbleScale = peakScale - (peakScale - startScale) * shrinkProgress;
+      }
+      
+      // Apply bubble scale as an additional transform layer
+      // The bubble scale is applied first, then the existing transform
+      if (currentTransform && currentTransform.trim() !== '') {
+        dog.style.transform = `scale(${bubbleScale}) ${currentTransform}`;
+      } else {
+        dog.style.transform = `scale(${bubbleScale})`;
+      }
+      
+      if (progress < 1) {
+        requestAnimationFrame(animateBubble);
+      } else {
+        // Restore original transform after animation
+        dog.style.transform = currentTransform || '';
+      }
+    }
+    
+    requestAnimationFrame(animateBubble);
+    
     // Get dog center position
     const dogRect = dog.getBoundingClientRect();
     const dogCenterX = dogRect.left + dogRect.width / 2;
     const dogCenterY = dogRect.top + dogRect.height / 2;
     
-    // Position woof text slightly above the dog center
-    const woofY = dogCenterY - 30; // 30px above center
+    // Position text slightly above the dog center
+    const textY = dogCenterY - 30; // 30px above center
     
-    // Create woof text above dog center
-    createWoofText(dogCenterX, woofY);
+    // Create random dog text above dog center
+    createDogText(dogCenterX, textY);
   });
 })();
 
