@@ -346,6 +346,37 @@ body {
   margin-bottom: 0;
 }
 
+.bio-social-links {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.bio-social-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  color: var(--text-secondary);
+  transition: all 0.15s ease-out;
+  text-decoration: none;
+  opacity: 0.7;
+}
+
+.bio-social-link:hover,
+.bio-social-link:focus {
+  color: var(--accent);
+  opacity: 1;
+  transform: translateY(-2px);
+  outline: none;
+}
+
+.bio-social-link svg {
+  display: block;
+}
+
 .highlight-link {
   color: var(--text-primary);
   text-decoration: none;

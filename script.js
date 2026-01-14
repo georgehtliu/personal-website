@@ -745,7 +745,8 @@
           velocityX = 0;
           velocityY = 0;
         } else {
-          // Move toward bone
+          // Move directly toward bone - shortest path
+          // Use internal state variables (dogX, dogY) for movement calculation
           const dx = targetX - dogX;
           const dy = targetY - dogY;
           const distance = Math.sqrt(dx * dx + dy * dy);
@@ -755,15 +756,27 @@
             const isPlayMode = window.isPlayModeActive ? window.isPlayModeActive() : false;
             const baseSpeed = 2.0; // Base speed when chasing bone
             const speed = isPlayMode ? baseSpeed * 3 : baseSpeed; // 3x faster in play mode
+            
+            // Move directly toward bone (shortest path)
             const moveX = (dx / distance) * speed;
             const moveY = (dy / distance) * speed;
             dogX += moveX;
             dogY += moveY;
             
-            // Update velocity based on movement
-            velocityX = dogX - prevDogX;
-            velocityY = dogY - prevDogY;
+            // Reset velocity to ensure direct movement (no momentum interference)
+            velocityX = moveX;
+            velocityY = moveY;
+          } else {
+            // Very close, stop movement
+            velocityX = 0;
+            velocityY = 0;
           }
+          
+          // When chasing bone, only constrain to viewport (no container rebound)
+          // This ensures shortest path to bone
+          const viewportConstrained = constrainToViewport(dogX, dogY);
+          dogX = viewportConstrained.x;
+          dogY = viewportConstrained.y;
         }
       } else {
         // No bone - roam randomly
@@ -792,23 +805,23 @@
           velocityX = dogX - prevDogX;
           velocityY = dogY - prevDogY;
         }
-      }
-      
-      // Check for collision and rebound
-      const collision = checkContainerCollision(dogX, dogY);
-      dogX = collision.x;
-      dogY = collision.y;
-      
-      // Constrain to viewport bounds
-      const viewportConstrained = constrainToViewport(dogX, dogY);
-      dogX = viewportConstrained.x;
-      dogY = viewportConstrained.y;
-      
-      // If rebounded, update velocity was already handled in checkContainerCollision
-      if (!collision.rebounded) {
-        // Apply some damping to velocity
-        velocityX *= 0.95;
-        velocityY *= 0.95;
+        
+        // Check for collision and rebound (only when not chasing bone)
+        const collision = checkContainerCollision(dogX, dogY);
+        dogX = collision.x;
+        dogY = collision.y;
+        
+        // Constrain to viewport bounds
+        const viewportConstrained = constrainToViewport(dogX, dogY);
+        dogX = viewportConstrained.x;
+        dogY = viewportConstrained.y;
+        
+        // If rebounded, update velocity was already handled in checkContainerCollision
+        if (!collision.rebounded) {
+          // Apply some damping to velocity
+          velocityX *= 0.95;
+          velocityY *= 0.95;
+        }
       }
     }
     
@@ -957,8 +970,9 @@
       return;
     }
     
-    // Animation parameters
-    const duration = 1500 + Math.random() * 500; // 1.5-2 seconds
+    // Animation parameters - 5x faster when feeding
+    const baseDuration = 1500 + Math.random() * 500; // 1.5-2 seconds base
+    const duration = baseDuration / 5; // 5x faster (0.3-0.4 seconds)
     const startTime = performance.now();
     const startX = x;
     const startY = y;
@@ -990,8 +1004,9 @@
       // Easing function for smooth deceleration
       const easeOut = 1 - Math.pow(1 - progress, 3);
       
-      // Move toward current dog position with gravity curve
-      const speed = 2 + (1 - progress) * 1; // Faster at start, slower near end
+      // Move toward current dog position with gravity curve - 5x faster
+      const baseSpeed = 2 + (1 - progress) * 1; // Base speed
+      const speed = baseSpeed * 5; // 5x faster when feeding
       const moveX = (dx / distance) * speed;
       const moveY = (dy / distance) * speed;
       
