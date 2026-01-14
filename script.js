@@ -128,6 +128,56 @@
     (size) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <circle cx="12" cy="12" r="7" fill="currentColor"/>
       <path d="M12 5 Q8 8 8 12 Q8 16 12 19" stroke="rgba(0,0,0,0.3)" stroke-width="1" fill="none"/>
+    </svg>`,
+    // Dog face planet
+    (size) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="10" fill="currentColor"/>
+      <!-- Dog ears -->
+      <ellipse cx="8" cy="7" rx="2" ry="3" fill="rgba(0,0,0,0.2)"/>
+      <ellipse cx="16" cy="7" rx="2" ry="3" fill="rgba(0,0,0,0.2)"/>
+      <!-- Dog eyes -->
+      <circle cx="9" cy="11" r="1.5" fill="rgba(0,0,0,0.6)"/>
+      <circle cx="15" cy="11" r="1.5" fill="rgba(0,0,0,0.6)"/>
+      <!-- Dog nose -->
+      <ellipse cx="12" cy="14" rx="1" ry="1.2" fill="rgba(0,0,0,0.6)"/>
+      <!-- Dog mouth -->
+      <path d="M12 14 Q10 16 9 15" stroke="rgba(0,0,0,0.4)" stroke-width="1" fill="none"/>
+      <path d="M12 14 Q14 16 15 15" stroke="rgba(0,0,0,0.4)" stroke-width="1" fill="none"/>
+    </svg>`,
+    // Cat face planet
+    (size) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="10" fill="currentColor"/>
+      <!-- Cat ears -->
+      <path d="M8 6 L10 4 L12 6 Z" fill="rgba(0,0,0,0.2)"/>
+      <path d="M12 6 L14 4 L16 6 Z" fill="rgba(0,0,0,0.2)"/>
+      <!-- Cat eyes -->
+      <ellipse cx="9" cy="11" rx="1.5" ry="2" fill="rgba(0,0,0,0.6)"/>
+      <ellipse cx="15" cy="11" rx="1.5" ry="2" fill="rgba(0,0,0,0.6)"/>
+      <!-- Cat nose -->
+      <path d="M12 13 L11 15 L13 15 Z" fill="rgba(0,0,0,0.6)"/>
+      <!-- Cat mouth -->
+      <path d="M12 15 Q10 17 9 16" stroke="rgba(0,0,0,0.4)" stroke-width="1" fill="none"/>
+      <path d="M12 15 Q14 17 15 16" stroke="rgba(0,0,0,0.4)" stroke-width="1" fill="none"/>
+    </svg>`,
+    // Dog bone planet
+    (size) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="10" fill="currentColor"/>
+      <!-- Bone shape -->
+      <ellipse cx="12" cy="12" rx="6" ry="2.5" fill="rgba(255,255,255,0.3)"/>
+      <circle cx="8" cy="12" r="2" fill="rgba(255,255,255,0.3)"/>
+      <circle cx="16" cy="12" r="2" fill="rgba(255,255,255,0.3)"/>
+    </svg>`,
+    // Cat paw planet
+    (size) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="10" fill="currentColor"/>
+      <!-- Paw pad -->
+      <ellipse cx="12" cy="14" rx="3" ry="2.5" fill="rgba(255,255,255,0.3)"/>
+      <!-- Toe pads -->
+      <circle cx="9" cy="10" r="1.5" fill="rgba(255,255,255,0.3)"/>
+      <circle cx="12" cy="9" r="1.5" fill="rgba(255,255,255,0.3)"/>
+      <circle cx="15" cy="10" r="1.5" fill="rgba(255,255,255,0.3)"/>
+      <circle cx="11" cy="12" r="1.2" fill="rgba(255,255,255,0.3)"/>
+      <circle cx="13" cy="12" r="1.2" fill="rgba(255,255,255,0.3)"/>
     </svg>`
   ];
   
@@ -640,12 +690,15 @@
       leashLine.setAttribute('stroke-width', '0');
       leashLine.setAttribute('stroke', 'transparent');
       // Reset dog scale when not leashed, but preserve orientation
+      // Dog faces cursor: if cursor on right, face right (flip); if on left, face left (default)
       const dogRect = dog.getBoundingClientRect();
       const dogCenterX = dogRect.left + dogRect.width / 2;
-      if (mouseX < dogCenterX) {
-        dog.style.transform = 'scaleX(-1)';
-      } else {
+      if (mouseX > dogCenterX) {
+        // Cursor on right - face left (default)
         dog.style.transform = 'scaleX(1)';
+      } else {
+        // Cursor on left - flip to face right
+        dog.style.transform = 'scaleX(-1)';
       }
       return;
     }
@@ -678,13 +731,16 @@
     const scale = minScale + (maxScale - minScale) * normalizedDistance;
     
     // Determine orientation based on cursor position
-    const facingLeft = mouseX < dogCenterX;
+    // Dog faces cursor: if cursor on right, face right (flip); if on left, face left (default)
+    const cursorOnRight = mouseX > dogCenterX;
     
     // Apply scale and orientation together
-    if (facingLeft) {
-      dog.style.transform = `scaleX(-${scale}) scaleY(${scale})`;
-    } else {
+    if (cursorOnRight) {
+      // Cursor on right - face left (default)
       dog.style.transform = `scale(${scale})`;
+    } else {
+      // Cursor on left - flip to face right
+      dog.style.transform = `scaleX(-${scale}) scaleY(${scale})`;
     }
     
     // Dynamic leash thickness: thinner when stretched, thicker when slack
@@ -1049,6 +1105,44 @@
     dogContainer.style.position = 'fixed';
     dogContainer.style.left = (dogX - dogOffset) + 'px';
     dogContainer.style.top = (dogY - dogOffset) + 'px';
+    
+    // Update dog orientation based on cursor position (for all modes)
+    // Dog faces cursor: if cursor on right, face right (flip); if on left, face left (default)
+    // Get current mouse position (use global tracker)
+    getMousePosition();
+    const dogRect = dog.getBoundingClientRect();
+    const dogCenterX = dogRect.left + dogRect.width / 2;
+    const currentTransform = dog.style.transform || '';
+    
+    // Extract scale values if they exist (for leashed mode)
+    const scaleMatch = currentTransform.match(/scale[XY]?\([^)]+\)/g);
+    const hasScale = scaleMatch && scaleMatch.length > 0;
+    
+    // Determine cursor position relative to dog
+    const cursorOnRight = mouseX > dogCenterX;
+    
+    if (isLeashed && hasScale) {
+      // Leashed mode - preserve scale, just update orientation
+      const scale = currentTransform.match(/scaleX\(-?([\d.]+)\)/)?.[1] || 
+                   currentTransform.match(/scale\(([\d.]+)\)/)?.[1] || '1';
+      if (cursorOnRight) {
+        // Cursor on right - face left (default)
+        dog.style.transform = `scale(${scale})`;
+      } else {
+        // Cursor on left - flip to face right
+        dog.style.transform = `scaleX(-${scale}) scaleY(${scale})`;
+      }
+    } else {
+      // Unleashed mode (including play mode) - simple orientation flip
+      // Always update orientation based on cursor position
+      if (cursorOnRight) {
+        // Cursor on right - face left (default)
+        dog.style.transform = 'scaleX(1)';
+      } else {
+        // Cursor on left - flip to face right
+        dog.style.transform = 'scaleX(-1)';
+      }
+    }
   }
   
   // Animate leash and dog orientation
@@ -1071,6 +1165,7 @@
       leashLine.setAttribute('stroke', 'transparent');
       leashLine.setAttribute('stroke-width', '0');
       leashLine.setAttribute('opacity', '0');
+      // Note: Dog orientation is already updated in updateDogPosition() for unleashed mode
     }
     requestAnimationFrame(animate);
   }
@@ -1276,6 +1371,9 @@
   let feedModeActive = false;
   let feedModeTimeout = null;
   let feedCursorElement = null;
+  let feedStreamInterval = null;
+  let mouseX = 0;
+  let mouseY = 0;
   
   // Create visual cursor element as fallback
   function createFeedCursor() {
@@ -1435,24 +1533,76 @@
     }
   }
   
-  // Handle feed mode click
-  function handleFeedClick(e) {
+  // Track mouse position for continuous food stream
+  document.addEventListener('mousemove', (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+  });
+  
+  // Create continuous stream of food particles
+  function startFoodStream() {
     if (!feedModeActive) return;
     
-    // Create multiple food particles for effect
-    const particleCount = 3 + Math.floor(Math.random() * 3); // 3-5 particles
-    for (let i = 0; i < particleCount; i++) {
-      setTimeout(() => {
-        const offsetX = (Math.random() - 0.5) * 20;
-        const offsetY = (Math.random() - 0.5) * 20;
-        createFoodParticle(e.clientX + offsetX, e.clientY + offsetY);
-      }, i * 50);
-    }
+    // Spawn food particles at regular intervals
+    feedStreamInterval = setInterval(() => {
+      if (!feedModeActive) {
+        clearInterval(feedStreamInterval);
+        return;
+      }
+      
+      // Spawn 2-4 particles at a time
+      const particleCount = 2 + Math.floor(Math.random() * 3);
+      
+      for (let i = 0; i < particleCount; i++) {
+        setTimeout(() => {
+          // Spawn from random positions around the viewport or near cursor
+          let spawnX, spawnY;
+          
+          // 70% chance to spawn near cursor, 30% chance from random viewport edge
+          if (Math.random() < 0.7) {
+            // Spawn near cursor with some randomness
+            spawnX = mouseX + (Math.random() - 0.5) * 100;
+            spawnY = mouseY + (Math.random() - 0.5) * 100;
+          } else {
+            // Spawn from random viewport edge
+            const edge = Math.floor(Math.random() * 4);
+            switch(edge) {
+              case 0: // Top
+                spawnX = Math.random() * window.innerWidth;
+                spawnY = -20;
+                break;
+              case 1: // Right
+                spawnX = window.innerWidth + 20;
+                spawnY = Math.random() * window.innerHeight;
+                break;
+              case 2: // Bottom
+                spawnX = Math.random() * window.innerWidth;
+                spawnY = window.innerHeight + 20;
+                break;
+              case 3: // Left
+                spawnX = -20;
+                spawnY = Math.random() * window.innerHeight;
+                break;
+            }
+          }
+          
+          // Ensure spawn position is within reasonable bounds
+          spawnX = Math.max(-50, Math.min(window.innerWidth + 50, spawnX));
+          spawnY = Math.max(-50, Math.min(window.innerHeight + 50, spawnY));
+          
+          createFoodParticle(spawnX, spawnY);
+        }, i * 30); // Stagger particle spawns slightly
+      }
+    }, 200); // Spawn new batch every 200ms for continuous stream
   }
   
   // Activate feed mode
   function activateFeedMode() {
     if (feedModeActive) return; // Already active
+    
+    // Deactivate other modes first
+    if (window.deactivatePlayMode) window.deactivatePlayMode();
+    if (window.deactivateZoomies) window.deactivateZoomies();
     
     feedModeActive = true;
     document.body.classList.add('feed-mode');
@@ -1495,8 +1645,11 @@
       requestAnimationFrame(updateTimer);
     }
     
-    // Add click listener for food particles
-    document.addEventListener('click', handleFeedClick, true);
+    // Start continuous food stream
+    startFoodStream();
+    
+    // Update button states
+    updateButtonStates();
     
     // Deactivate after 10 seconds
     feedModeTimeout = setTimeout(() => {
@@ -1515,22 +1668,48 @@
       feedCursorElement.style.display = 'none';
     }
     
+    // Stop food stream
+    if (feedStreamInterval) {
+      clearInterval(feedStreamInterval);
+      feedStreamInterval = null;
+    }
+    
     // Reset timer
     const timerFillEl = document.getElementById('feed-timer-fill');
     if (timerFillEl) {
       timerFillEl.style.width = '0%';
     }
     
-    document.removeEventListener('click', handleFeedClick, true);
-    
     if (feedModeTimeout) {
       clearTimeout(feedModeTimeout);
       feedModeTimeout = null;
+    }
+    
+    // Re-enable all buttons
+    updateButtonStates();
+  }
+  
+  // Update button disabled states
+  function updateButtonStates() {
+    const feedBtn = document.getElementById('feed-btn');
+    const playBtn = document.getElementById('play-btn');
+    const zoomiesBtn = document.getElementById('zoomies-btn');
+    
+    if (feedBtn) {
+      feedBtn.disabled = feedModeActive;
+    }
+    if (playBtn) {
+      playBtn.disabled = window.isPlayModeActive ? window.isPlayModeActive() : false;
+    }
+    if (zoomiesBtn) {
+      zoomiesBtn.disabled = window.isZoomiesModeActive ? window.isZoomiesModeActive() : false;
     }
   }
   
   // Export for use in button handler
   window.activateFeedMode = activateFeedMode;
+  window.deactivateFeedMode = deactivateFeedMode;
+  window.updateButtonStates = updateButtonStates;
 })();
 
 // Play functionality
@@ -1538,9 +1717,8 @@
   let playModeActive = false;
   let playModeTimeout = null;
   let playCursorElement = null;
-  let currentBone = null;
-  let boneTargetX = null;
-  let boneTargetY = null;
+  let playMouseX = 0;
+  let playMouseY = 0;
   
   // Create visual cursor element as fallback
   function createPlayCursor() {
@@ -1551,16 +1729,22 @@
     playCursorElement.style.display = 'none';
     document.body.appendChild(playCursorElement);
     
-    // Track mouse movement to update cursor position
-    document.addEventListener('mousemove', (e) => {
-      if (playModeActive && playCursorElement) {
-        playCursorElement.style.left = e.clientX + 'px';
-        playCursorElement.style.top = e.clientY + 'px';
+    return playCursorElement;
+  }
+  
+  // Track mouse position for cursor following
+  function handlePlayMouseMove(e) {
+    if (playModeActive) {
+      playMouseX = e.clientX;
+      playMouseY = e.clientY;
+      
+      // Update visual cursor position
+      if (playCursorElement) {
+        playCursorElement.style.left = playMouseX + 'px';
+        playCursorElement.style.top = playMouseY + 'px';
         playCursorElement.style.display = 'block';
       }
-    });
-    
-    return playCursorElement;
+    }
   }
   
   // Animate bone collection
@@ -1621,47 +1805,19 @@
     }, 500);
   }
   
-  // Create bone element at click position
-  function createBone(x, y) {
-    // Remove existing bone if any
-    if (currentBone) {
-      currentBone.remove();
-    }
-    
-    // Constrain bone position to viewport bounds (accounting for dog's radius)
-    const dogRadius = 90; // dogOffset value - dog needs to be able to reach bone
-    const boneSize = 60; // Bone element size
-    const padding = dogRadius + 10; // Padding from edges (dog radius + small buffer)
-    const constrainedX = Math.max(padding, Math.min(window.innerWidth - padding, x));
-    const constrainedY = Math.max(padding, Math.min(window.innerHeight - padding, y));
-    
-    const bone = document.createElement('div');
-    bone.className = 'bone-element';
-    bone.style.left = constrainedX + 'px';
-    bone.style.top = constrainedY + 'px';
-    document.body.appendChild(bone);
-    
-    currentBone = bone;
-    boneTargetX = constrainedX;
-    boneTargetY = constrainedY;
-    
-    // Make dog chase the bone (with constrained position)
-    if (window.setDogTarget) {
-      window.setDogTarget(constrainedX, constrainedY);
-    }
-  }
-  
-  // Handle play mode click
-  function handlePlayClick(e) {
-    if (!playModeActive) return;
-    
-    // Create bone at click position
-    createBone(e.clientX, e.clientY);
-  }
   
   // Activate play mode
   function activatePlayMode() {
     if (playModeActive) return; // Already active
+    
+    // Deactivate other modes first
+    if (window.deactivateFeedMode) window.deactivateFeedMode();
+    if (window.deactivateZoomies) window.deactivateZoomies();
+    
+    // Automatically unleash dog if leashed
+    if (window.toggleDogLeash && window.isDogLeashed && window.isDogLeashed()) {
+      window.toggleDogLeash();
+    }
     
     playModeActive = true;
     document.body.classList.add('play-mode');
@@ -1676,6 +1832,13 @@
     // Create and show visual cursor fallback
     const cursorEl = createPlayCursor();
     cursorEl.style.display = 'block';
+    
+    // Initialize mouse position to current cursor position
+    playMouseX = window.innerWidth / 2;
+    playMouseY = window.innerHeight / 2;
+    
+    // Add mouse move listener to track cursor position
+    document.addEventListener('mousemove', handlePlayMouseMove);
     
     // Show and animate timer inside play button
     const timerFillEl = document.getElementById('play-timer-fill');
@@ -1703,8 +1866,8 @@
       requestAnimationFrame(updateTimer);
     }
     
-    // Add click listener for bone placement
-    document.addEventListener('click', handlePlayClick, true);
+    // Update button states
+    if (window.updateButtonStates) window.updateButtonStates();
     
     // Deactivate after 10 seconds
     playModeTimeout = setTimeout(() => {
@@ -1723,12 +1886,8 @@
       playCursorElement.style.display = 'none';
     }
     
-    // Remove bone (but don't reset target if dog is still moving)
-    if (currentBone) {
-      currentBone.remove();
-      currentBone = null;
-      // Keep boneTargetX/Y so dog can still reach it if close
-    }
+    // Remove mouse move listener
+    document.removeEventListener('mousemove', handlePlayMouseMove);
     
     // Reset timer
     const timerFillEl = document.getElementById('play-timer-fill');
@@ -1736,46 +1895,35 @@
       timerFillEl.style.width = '0%';
     }
     
-    document.removeEventListener('click', handlePlayClick, true);
-    
     if (playModeTimeout) {
       clearTimeout(playModeTimeout);
       playModeTimeout = null;
     }
+    
+    // Re-enable all buttons
+    if (window.updateButtonStates) window.updateButtonStates();
   }
   
-  // Export bone target getter (returns constrained position)
+  // Export bone target getter (returns cursor position)
   window.getBoneTarget = () => {
-    if (boneTargetX !== null && boneTargetY !== null) {
-      // Return constrained position to ensure it's always within viewport
+    if (playModeActive) {
+      // Return cursor position, constrained to viewport
       const dogRadius = 90; // dogOffset value
-      const constrainedX = Math.max(dogRadius, Math.min(window.innerWidth - dogRadius, boneTargetX));
-      const constrainedY = Math.max(dogRadius, Math.min(window.innerHeight - dogRadius, boneTargetY));
+      const constrainedX = Math.max(dogRadius, Math.min(window.innerWidth - dogRadius, playMouseX));
+      const constrainedY = Math.max(dogRadius, Math.min(window.innerHeight - dogRadius, playMouseY));
       return { x: constrainedX, y: constrainedY };
     }
     return null;
   };
   
-  // Export function to update bone target coordinates (for constraint updates)
+  // Export function to update bone target coordinates (no longer needed, but keep for compatibility)
   window.updateBoneTarget = (x, y) => {
-    boneTargetX = x;
-    boneTargetY = y;
-    if (currentBone) {
-      currentBone.style.left = x + 'px';
-      currentBone.style.top = y + 'px';
-    }
+    // No-op since we're using cursor position directly
   };
   
-  // Animate bone collection
+  // Animate bone collection - create particle effect when dog gets close to cursor
   function collectBone(x, y) {
-    // Find the bone element
-    const boneEl = currentBone;
-    if (!boneEl) return;
-    
-    // Add collection animation
-    boneEl.style.animation = 'boneCollect 0.5s ease-out forwards';
-    
-    // Create golden particles effect
+    // Create golden particles effect at cursor position
     const particleCount = 8;
     for (let i = 0; i < particleCount; i++) {
       setTimeout(() => {
@@ -1815,30 +1963,14 @@
         requestAnimationFrame(animateParticle);
       }, i * 20);
     }
-    
-    // Remove bone after animation
-    setTimeout(() => {
-      if (boneEl && boneEl.parentNode) {
-        boneEl.remove();
-      }
-    }, 500);
   }
   
   // Export bone collection animation
   window.collectBone = collectBone;
   
-  // Export bone removal function
+  // Export bone removal function (no longer needed, but keep for compatibility)
   window.removeBone = () => {
-    if (currentBone) {
-      // If bone exists, animate collection instead of just removing
-      const boneRect = currentBone.getBoundingClientRect();
-      const boneX = boneRect.left + boneRect.width / 2;
-      const boneY = boneRect.top + boneRect.height / 2;
-      collectBone(boneX, boneY);
-      currentBone = null;
-    }
-    boneTargetX = null;
-    boneTargetY = null;
+    // No-op since we're using cursor position directly
   };
   
   // Export play mode status checker
@@ -1846,6 +1978,7 @@
   
   // Export for use in button handler
   window.activatePlayMode = activatePlayMode;
+  window.deactivatePlayMode = deactivatePlayMode;
 })();
 
 // Zoomies functionality
@@ -1857,6 +1990,10 @@
   // Activate zoomies mode
   function activateZoomies() {
     if (zoomiesModeActive) return; // Already active
+    
+    // Deactivate other modes first
+    if (window.deactivateFeedMode) window.deactivateFeedMode();
+    if (window.deactivatePlayMode) window.deactivatePlayMode();
     
     zoomiesModeActive = true;
     document.body.classList.add('zoomies-mode');
@@ -1899,6 +2036,9 @@
       requestAnimationFrame(updateTimer);
     }
     
+    // Update button states
+    if (window.updateButtonStates) window.updateButtonStates();
+    
     // Deactivate after duration
     zoomiesTimeout = setTimeout(() => {
       deactivateZoomies();
@@ -1935,6 +2075,7 @@
   
   // Export for use in button handler
   window.activateZoomies = activateZoomies;
+  window.deactivateZoomies = deactivateZoomies;
   window.isZoomiesModeActive = () => zoomiesModeActive;
 })();
 
