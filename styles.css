@@ -157,10 +157,11 @@ body {
   position: relative;
   max-width: clamp(42rem, 80vw, 64rem);
   margin: 0 auto;
-  border: 1px solid var(--outline);
+  border: 1px solid var(--accent);
   z-index: 10;
   background-color: var(--bg);
 }
+
 
 /* Social Links (Top Right) */
 .social-links {
@@ -359,10 +360,13 @@ body {
   justify-content: center;
   width: 32px;
   height: 32px;
-  color: var(--text-secondary);
+  color: var(--accent);
+  background: var(--surface);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-md);
   transition: all 0.15s ease-out;
   text-decoration: none;
-  opacity: 0.7;
+  opacity: 1;
 }
 
 .bio-social-link:hover,
@@ -370,6 +374,7 @@ body {
   color: var(--accent);
   opacity: 1;
   transform: translateY(-2px);
+  box-shadow: 0 0 0 1px var(--accent), 0 0 8px rgba(255, 107, 53, 0.2);
   outline: none;
 }
 

@@ -4,6 +4,22 @@
   if (!starsContainer) return;
   
   const starCount = 50; // Number of stars to generate
+  
+  // Colorful star colors (slightly colorful but subtle)
+  const starColors = [
+    '#E5E7EB', // Original gray
+    '#A3A9B8', // Light gray
+    '#FFB899', // Soft orange
+    '#FF8C5A', // Medium orange
+    '#B8D4FF', // Soft blue
+    '#9BB5FF', // Light blue
+    '#D4B8FF', // Soft purple
+    '#C8A8FF', // Light purple
+    '#FFD4B8', // Peach
+    '#B8FFD4', // Soft green
+    '#FFE5B8', // Soft yellow
+  ];
+  
   const starShapes = [
     // 5-pointed star
     (size) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -56,7 +72,10 @@
     star.style.left = x + '%';
     star.style.top = y + '%';
     star.style.opacity = opacity;
-    star.style.color = 'var(--text-secondary)';
+    
+    // Random colorful color
+    const colorIndex = Math.floor(Math.random() * starColors.length);
+    star.style.color = starColors[colorIndex];
     
     // Add random animation delay for natural movement
     // Stars on left side (x < 50%) get shorter delays so they're visible immediately
@@ -68,6 +87,19 @@
   
   // Generate planets
   const planetCount = 5; // Number of planets
+  
+  // Colorful planet colors (more vibrant than stars)
+  const planetColors = [
+    '#FF8C5A', // Orange
+    '#9BB5FF', // Blue
+    '#C8A8FF', // Purple
+    '#FFD4B8', // Peach
+    '#B8FFD4', // Green
+    '#FFE5B8', // Yellow
+    '#FFB899', // Soft orange
+    '#D4B8FF', // Soft purple
+  ];
+  
   const planetShapes = [
     // Simple circle planet
     (size) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -121,7 +153,10 @@
     planet.style.left = x + '%';
     planet.style.top = y + '%';
     planet.style.opacity = opacity;
-    planet.style.color = 'var(--text-secondary)';
+    
+    // Random colorful color
+    const colorIndex = Math.floor(Math.random() * planetColors.length);
+    planet.style.color = planetColors[colorIndex];
     
     // Add random animation delay for natural movement
     const baseDelay = x < 50 ? Math.random() * 30 : Math.random() * 60;
@@ -135,7 +170,7 @@
 (function() {
   const nameText = document.querySelector('.name-text');
   const cursor = document.querySelector('.typewriter-cursor');
-  const fullText = 'george liu';
+  const fullText = 'George Liu';
   
   if (!nameText) return;
   
