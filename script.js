@@ -376,6 +376,11 @@
     return;
   }
   
+  // Check if we're on a small screen (same breakpoint as CSS: max-width: 1200px)
+  function isSmallScreen() {
+    return window.innerWidth <= 1200;
+  }
+  
   let mouseX = 0;
   let mouseY = 0;
   const dogSize = 180; // Dog width/height
@@ -574,6 +579,19 @@
   
   // Update leash line
   function updateLeash() {
+    // Hide leash on small screens (same behavior as dog)
+    if (isSmallScreen()) {
+      leashSvg.style.cssText = 'opacity: 0 !important; visibility: hidden !important; display: none !important; transition: none !important;';
+      // Reset leash line coordinates and make stroke transparent
+      leashLine.setAttribute('x1', '0');
+      leashLine.setAttribute('y1', '0');
+      leashLine.setAttribute('x2', '0');
+      leashLine.setAttribute('y2', '0');
+      leashLine.setAttribute('stroke-width', '0');
+      leashLine.setAttribute('stroke', 'transparent');
+      return;
+    }
+    
     // Check leash state and update visibility immediately
     if (!isLeashed) {
       // Completely hide leash when unleashed
@@ -970,8 +988,8 @@
   function animate() {
     updateDogPosition();
     // Update leash based on state
-    if (isLeashed) {
-      // Leashed - show and update leash
+    if (isLeashed && !isSmallScreen()) {
+      // Leashed - show and update leash (only if not on small screen)
       updateLeash();
       // Double-check leash is visible (in case updateLeash didn't set it)
       leashSvg.style.cssText = 'opacity: 1 !important; visibility: visible !important; display: block !important;';
@@ -1006,6 +1024,8 @@
       dog.style.top = (dogY - dogOffset) + 'px';
       dogContainer.style.top = (dogY - dogOffset) + 'px';
     }
+    // Update leash visibility on resize (to handle small screen changes)
+    updateLeash();
   });
   
   animate();
