@@ -193,18 +193,20 @@
   const dogOffset = dogSize / 2; // Half of dog size for centering
   
   let isLeashed = true;
+  // Initialize Y positions to viewport center instead of 0
+  const initialCenterY = window.innerHeight / 2;
   let dogX = 0;
-  let dogY = 0;
+  let dogY = initialCenterY;
   let targetX = 0;
-  let targetY = 0;
+  let targetY = initialCenterY;
   let originalX = 0;
-  let originalY = 0;
+  let originalY = initialCenterY;
   let targetOriginalX = 0;
-  let targetOriginalY = 0;
+  let targetOriginalY = initialCenterY;
   let velocityX = 0;
   let velocityY = 0;
   let prevDogX = 0;
-  let prevDogY = 0;
+  let prevDogY = initialCenterY;
   
   // Get mouse position from global tracker
   function getMousePosition() {
@@ -227,35 +229,60 @@
     const rect = contentContainer.getBoundingClientRect();
     const containerLeft = rect.left;
     const screenLeft = 0;
+    const dogRadius = dogOffset;
     
     // Dog position: middle of space between screen left and container left edge
     targetOriginalX = (screenLeft + containerLeft) / 2;
-    targetOriginalY = window.innerHeight / 2; // Vertically centered
+    // Always vertically centered in viewport
+    targetOriginalY = window.innerHeight / 2;
     
-    // Update original position smoothly
+    // Constrain to viewport
+    targetOriginalX = Math.max(dogRadius, Math.min(window.innerWidth - dogRadius, targetOriginalX));
+    targetOriginalY = Math.max(dogRadius, Math.min(window.innerHeight - dogRadius, targetOriginalY));
+    
+    // Update original position smoothly (but Y should always be centered)
     originalX += (targetOriginalX - originalX) * 0.1;
-    originalY += (targetOriginalY - originalY) * 0.1;
+    // Force Y to always be centered, don't smooth it
+    originalY = targetOriginalY;
   }
   
   // Initialize dog position (middle of space between screen left and container left edge)
   function initializeDog() {
     calculateOriginalPosition();
     
-    dogX = originalX;
-    dogY = originalY;
-    targetX = originalX;
-    targetY = originalY;
+    // Force initial Y position to be centered
+    const dogRadius = dogOffset;
+    const centeredY = Math.max(dogRadius, Math.min(window.innerHeight - dogRadius, window.innerHeight / 2));
     
+    dogX = originalX;
+    dogY = centeredY; // Start at center
+    originalY = centeredY; // Update originalY to match
+    targetX = originalX;
+    targetY = centeredY;
+    
+    // Use fixed positioning to ensure viewport-relative positioning
+    dog.style.position = 'fixed';
     dog.style.left = (dogX - dogOffset) + 'px';
     dog.style.top = (dogY - dogOffset) + 'px';
-    dog.style.position = 'relative';
     
-    // Update container position to match dog
+    // Update container position to match dog (also fixed)
+    dogContainer.style.position = 'fixed';
     dogContainer.style.left = (dogX - dogOffset) + 'px';
     dogContainer.style.top = (dogY - dogOffset) + 'px';
   }
   
   initializeDog();
+  
+  // Force immediate centering on load
+  window.addEventListener('load', () => {
+    const dogRadius = dogOffset;
+    const centeredY = Math.max(dogRadius, Math.min(window.innerHeight - dogRadius, window.innerHeight / 2));
+    dogY = centeredY;
+    originalY = centeredY;
+    targetY = centeredY;
+    dog.style.top = (dogY - dogOffset) + 'px';
+    dogContainer.style.top = (dogY - dogOffset) + 'px';
+  });
   
   // Constrain position to viewport bounds
   function constrainToViewport(x, y) {
@@ -543,15 +570,17 @@
       // For leashed mode, always keep dog vertically centered in viewport
       const dogRadius = dogOffset;
       targetX = originalX;
-      targetY = window.innerHeight / 2; // Always centered vertically
+      // Always use viewport center for Y, don't use originalY
+      targetY = window.innerHeight / 2;
       
       // Constrain to viewport
       targetX = Math.max(dogRadius, Math.min(window.innerWidth - dogRadius, targetX));
       targetY = Math.max(dogRadius, Math.min(window.innerHeight - dogRadius, targetY));
       
-      // Smoothly move to target position
+      // Smoothly move to target position (X only, Y should snap to center)
       dogX += (targetX - dogX) * 0.1;
-      dogY += (targetY - dogY) * 0.1;
+      // Force Y to center immediately or very quickly
+      dogY = targetY;
       // Reset velocity when leashed
       velocityX = 0;
       velocityY = 0;
@@ -603,10 +632,13 @@
     dogX = finalConstrained.x;
     dogY = finalConstrained.y;
     
+    // Ensure fixed positioning for viewport-relative coordinates
+    dog.style.position = 'fixed';
     dog.style.left = (dogX - dogOffset) + 'px';
     dog.style.top = (dogY - dogOffset) + 'px';
     
-    // Update container position to match dog
+    // Update container position to match dog (also fixed)
+    dogContainer.style.position = 'fixed';
     dogContainer.style.left = (dogX - dogOffset) + 'px';
     dogContainer.style.top = (dogY - dogOffset) + 'px';
   }
@@ -625,6 +657,16 @@
   });
   window.addEventListener('resize', () => {
     calculateOriginalPosition();
+    // Force Y to center on resize
+    if (isLeashed) {
+      const dogRadius = dogOffset;
+      const centeredY = Math.max(dogRadius, Math.min(window.innerHeight - dogRadius, window.innerHeight / 2));
+      dogY = centeredY;
+      originalY = centeredY;
+      targetY = centeredY;
+      dog.style.top = (dogY - dogOffset) + 'px';
+      dogContainer.style.top = (dogY - dogOffset) + 'px';
+    }
   });
   
   animate();

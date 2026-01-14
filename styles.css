@@ -370,7 +370,7 @@ body {
 }
 
 .dog-img {
-  position: relative;
+  position: fixed;
   width: 180px;
   height: 180px;
   opacity: 0.8;
