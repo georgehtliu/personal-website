@@ -119,6 +119,54 @@ body::before {
   pointer-events: none;
   z-index: 0;
   opacity: 0.3;
+  transition: opacity 0.5s ease;
+}
+
+/* Zoomies mode - spatial gradient background */
+body.zoomies-mode {
+  background: 
+    radial-gradient(circle at 20% 30%, rgba(255, 107, 53, 0.3) 0%, transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(155, 181, 255, 0.3) 0%, transparent 40%),
+    radial-gradient(circle at 50% 50%, rgba(200, 168, 255, 0.25) 0%, transparent 50%),
+    radial-gradient(circle at 10% 80%, rgba(255, 212, 184, 0.2) 0%, transparent 40%),
+    radial-gradient(circle at 90% 20%, rgba(184, 255, 212, 0.2) 0%, transparent 40%),
+    radial-gradient(circle at 30% 60%, rgba(255, 229, 184, 0.15) 0%, transparent 35%),
+    linear-gradient(135deg, #0F1115 0%, #1a1d2a 25%, #0B0D12 50%, #1a1d2a 75%, #0F1115 100%);
+  background-size: 200% 200%;
+  animation: zoomiesGradient 3s ease-in-out infinite;
+  background-color: var(--bg);
+}
+
+@keyframes zoomiesGradient {
+  0% {
+    background-position: 0% 0%;
+  }
+  25% {
+    background-position: 100% 0%;
+  }
+  50% {
+    background-position: 100% 100%;
+  }
+  75% {
+    background-position: 0% 100%;
+  }
+  100% {
+    background-position: 0% 0%;
+  }
+}
+
+body.zoomies-mode::before {
+  opacity: 0.6;
+  animation: zoomiesGrid 2s linear infinite;
+}
+
+@keyframes zoomiesGrid {
+  0% {
+    transform: translate(0, 0);
+  }
+  100% {
+    transform: translate(20px, 20px);
+  }
 }
 
 /* Background Stars */
@@ -129,7 +177,7 @@ body::before {
   width: 100%;
   height: 100%;
   pointer-events: none;
-  z-index: 1;
+  z-index: 0;
   overflow: hidden;
   background: 
     radial-gradient(circle at 20% 30%, rgba(255, 107, 53, 0.006) 0%, transparent 50%),
@@ -241,7 +289,7 @@ body::before {
   position: fixed;
   top: var(--container-padding);
   left: var(--container-padding);
-  z-index: 100;
+  z-index: 1000;
   display: flex;
   flex-direction: row;
   gap: 0.5rem;
@@ -270,7 +318,8 @@ body::before {
 }
 
 .feed-timer-fill,
-.play-timer-fill {
+.play-timer-fill,
+.zoomies-timer-fill {
   position: absolute;
   bottom: 0;
   left: 0;
@@ -283,7 +332,8 @@ body::before {
   border-radius: var(--radius-lg);
 }
 
-.play-btn-text {
+.play-btn-text,
+.zoomies-btn-text {
   position: relative;
   z-index: 1;
 }
@@ -453,7 +503,7 @@ body::before {
   height: 180px;
   opacity: 0.8;
   pointer-events: auto;
-  z-index: 1001; /* Above leash */
+  z-index: 1000; /* Above leash */
   transition: transform 0.1s ease-out;
   transform-origin: center center;
   object-fit: contain;
@@ -465,10 +515,12 @@ body::before {
   mix-blend-mode: screen;
 }
 
+
 .dog-container {
   position: fixed;
   display: inline-block;
   pointer-events: none;
+  z-index: 1000; /* Above leash */
 }
 
 .leash-svg {
@@ -478,7 +530,7 @@ body::before {
   width: 100%;
   height: 100%;
   pointer-events: none;
-  z-index: 999;
+  z-index: 900;
 }
 
 .leash-line {
@@ -660,6 +712,36 @@ body.play-mode select {
   color: #ff6b9d;
   text-shadow: 0 0 4px rgba(255, 107, 157, 0.8);
   user-select: none;
+}
+
+/* Woof text */
+.woof-text {
+  position: fixed;
+  pointer-events: none;
+  z-index: 10002;
+  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+  font-size: 2rem;
+  font-weight: 600;
+  color: #FFFFFF;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.6), 0 2px 4px rgba(0, 0, 0, 0.5);
+  user-select: none;
+  transform: translate(-50%, -50%);
+  animation: woofFloat 1.5s ease-out forwards;
+}
+
+@keyframes woofFloat {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) translateY(0) scale(0.5);
+  }
+  20% {
+    opacity: 1;
+    transform: translate(-50%, -50%) translateY(-10px) scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) translateY(-60px) scale(0.8);
+  }
 }
 
 .timeline-item {

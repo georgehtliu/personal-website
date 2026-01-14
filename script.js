@@ -387,6 +387,7 @@
   const dogOffset = dogSize / 2; // Half of dog size for centering
   
   let isLeashed = true;
+  let isZoomiesMode = false;
   // Initialize Y positions to viewport center instead of 0
   const initialCenterY = window.innerHeight / 2;
   let dogX = 0;
@@ -401,6 +402,7 @@
   let velocityY = 0;
   let prevDogX = 0;
   let prevDogY = initialCenterY;
+  let lastZoomiesTargetTime = 0;
   
   // Get mouse position from global tracker
   function getMousePosition() {
@@ -490,6 +492,40 @@
     y = Math.max(dogRadius, Math.min(window.innerHeight - dogRadius, y));
     
     return { x, y };
+  }
+  
+  // Generate zoomies target around container perimeter
+  function generateZoomiesTarget() {
+    const rect = contentContainer.getBoundingClientRect();
+    const dogRadius = dogOffset;
+    const padding = 50; // Distance from container edge
+    
+    // Choose a random side of the container (0=top, 1=right, 2=bottom, 3=left)
+    const side = Math.floor(Math.random() * 4);
+    
+    switch(side) {
+      case 0: // Top
+        targetX = rect.left + Math.random() * (rect.right - rect.left);
+        targetY = rect.top - dogRadius - padding;
+        break;
+      case 1: // Right
+        targetX = rect.right + dogRadius + padding;
+        targetY = rect.top + Math.random() * (rect.bottom - rect.top);
+        break;
+      case 2: // Bottom
+        targetX = rect.left + Math.random() * (rect.right - rect.left);
+        targetY = rect.bottom + dogRadius + padding;
+        break;
+      case 3: // Left
+        targetX = rect.left - dogRadius - padding;
+        targetY = rect.top + Math.random() * (rect.bottom - rect.top);
+        break;
+    }
+    
+    // Constrain to viewport
+    const constrained = constrainToViewport(targetX, targetY);
+    targetX = constrained.x;
+    targetY = constrained.y;
   }
   
   // Generate random target for roaming (outside content container)
@@ -664,7 +700,7 @@
     leashSvg.style.width = '100%';
     leashSvg.style.height = '100%';
     leashSvg.style.pointerEvents = 'none';
-    leashSvg.style.zIndex = '998'; // Below dog
+    leashSvg.style.zIndex = '900'; // Below dog, above stars
     
     // Set leash line coordinates (straight line) - ensure they're numbers
     leashLine.setAttribute('x1', dogCenterX.toString());
@@ -922,48 +958,79 @@
           dogY = viewportConstrained.y;
         }
       } else {
-        // No bone - roam randomly
-        const dx = targetX - dogX;
-        const dy = targetY - dogY;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        
-        if (distance < 10) {
-          // Reached target, generate new one
-          generateRandomTarget();
-          // Reset velocity
-          velocityX = 0;
-          velocityY = 0;
-        } else {
-          // Move toward target
-          // Check if play mode is active for 3x speed boost
-          const isPlayMode = window.isPlayModeActive ? window.isPlayModeActive() : false;
-          const baseSpeed = 1.5;
-          const speed = isPlayMode ? baseSpeed * 3 : baseSpeed; // 3x faster in play mode
-          const moveX = (dx / distance) * speed;
-          const moveY = (dy / distance) * speed;
+        // No bone - check for zoomies mode or roam randomly
+        if (isZoomiesMode) {
+          // ZOOMIES MODE - fly around container very quickly
+          const dx = targetX - dogX;
+          const dy = targetY - dogY;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          // Generate new target more frequently in zoomies mode (every 200-400ms)
+          const now = performance.now();
+          if (distance < 30 || (now - lastZoomiesTargetTime) > (200 + Math.random() * 200)) {
+            generateZoomiesTarget();
+            lastZoomiesTargetTime = now;
+          }
+          
+          // Move very quickly toward target (10x faster than normal)
+          const zoomiesSpeed = 15.0; // Very fast speed
+          const moveX = (dx / distance) * zoomiesSpeed;
+          const moveY = (dy / distance) * zoomiesSpeed;
           dogX += moveX;
           dogY += moveY;
           
-          // Update velocity based on movement
+          // Update velocity
           velocityX = dogX - prevDogX;
           velocityY = dogY - prevDogY;
-        }
-        
-        // Check for collision and rebound (only when not chasing bone)
-        const collision = checkContainerCollision(dogX, dogY);
-        dogX = collision.x;
-        dogY = collision.y;
-        
-        // Constrain to viewport bounds
-        const viewportConstrained = constrainToViewport(dogX, dogY);
-        dogX = viewportConstrained.x;
-        dogY = viewportConstrained.y;
-        
-        // If rebounded, update velocity was already handled in checkContainerCollision
-        if (!collision.rebounded) {
-          // Apply some damping to velocity
-          velocityX *= 0.95;
-          velocityY *= 0.95;
+          
+          // Constrain to viewport bounds only (no container collision in zoomies)
+          const viewportConstrained = constrainToViewport(dogX, dogY);
+          dogX = viewportConstrained.x;
+          dogY = viewportConstrained.y;
+        } else {
+          // Normal roaming
+          const dx = targetX - dogX;
+          const dy = targetY - dogY;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          if (distance < 10) {
+            // Reached target, generate new one
+            generateRandomTarget();
+            // Reset velocity
+            velocityX = 0;
+            velocityY = 0;
+          } else {
+            // Move toward target
+            // Check if play mode is active for 3x speed boost
+            const isPlayMode = window.isPlayModeActive ? window.isPlayModeActive() : false;
+            const baseSpeed = 1.5;
+            const speed = isPlayMode ? baseSpeed * 3 : baseSpeed; // 3x faster in play mode
+            const moveX = (dx / distance) * speed;
+            const moveY = (dy / distance) * speed;
+            dogX += moveX;
+            dogY += moveY;
+            
+            // Update velocity based on movement
+            velocityX = dogX - prevDogX;
+            velocityY = dogY - prevDogY;
+          }
+          
+          // Check for collision and rebound (only when not chasing bone)
+          const collision = checkContainerCollision(dogX, dogY);
+          dogX = collision.x;
+          dogY = collision.y;
+          
+          // Constrain to viewport bounds
+          const viewportConstrained = constrainToViewport(dogX, dogY);
+          dogX = viewportConstrained.x;
+          dogY = viewportConstrained.y;
+          
+          // If rebounded, update velocity was already handled in checkContainerCollision
+          if (!collision.rebounded) {
+            // Apply some damping to velocity
+            velocityX *= 0.95;
+            velocityY *= 0.95;
+          }
         }
       }
     }
@@ -987,14 +1054,14 @@
   // Animate leash and dog orientation
   function animate() {
     updateDogPosition();
-    // Update leash based on state
-    if (isLeashed && !isSmallScreen()) {
-      // Leashed - show and update leash (only if not on small screen)
+    // Update leash based on state (hide during zoomies mode)
+    if (isLeashed && !isSmallScreen() && !isZoomiesMode) {
+      // Leashed - show and update leash (only if not on small screen and not in zoomies)
       updateLeash();
       // Double-check leash is visible (in case updateLeash didn't set it)
       leashSvg.style.cssText = 'opacity: 1 !important; visibility: visible !important; display: block !important;';
     } else {
-      // Ensure leash stays hidden when unleashed - completely remove it from rendering
+      // Ensure leash stays hidden when unleashed or in zoomies - completely remove it from rendering
       leashSvg.style.cssText = 'opacity: 0 !important; visibility: hidden !important; display: none !important; pointer-events: none !important;';
       // Clear leash line completely
       leashLine.setAttribute('x1', '0');
@@ -1071,6 +1138,53 @@
   // Export toggle function for dropdown
   window.toggleDogLeash = toggleLeash;
   window.setDogTarget = setDogTarget;
+  
+  // Export zoomies mode setter
+  window.setZoomiesMode = (active) => {
+    isZoomiesMode = active;
+    if (active) {
+      // Generate initial zoomies target
+      generateZoomiesTarget();
+      lastZoomiesTargetTime = performance.now();
+    }
+  };
+  
+  // Export leash status checker
+  window.isDogLeashed = () => isLeashed;
+  
+  // Woof functionality - show "woof" text when dog is clicked
+  function createWoofText(x, y) {
+    const woofText = document.createElement('div');
+    woofText.className = 'woof-text';
+    woofText.textContent = 'woof';
+    woofText.style.left = x + 'px';
+    woofText.style.top = y + 'px';
+    document.body.appendChild(woofText);
+    
+    // Remove after animation completes
+    setTimeout(() => {
+      if (woofText.parentNode) {
+        woofText.remove();
+      }
+    }, 1500);
+  }
+  
+  // Add click event listener to dog
+  dog.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Get dog center position
+    const dogRect = dog.getBoundingClientRect();
+    const dogCenterX = dogRect.left + dogRect.width / 2;
+    const dogCenterY = dogRect.top + dogRect.height / 2;
+    
+    // Position woof text slightly above the dog center
+    const woofY = dogCenterY - 30; // 30px above center
+    
+    // Create woof text above dog center
+    createWoofText(dogCenterX, woofY);
+  });
 })();
 
 // Feed functionality
@@ -1650,6 +1764,96 @@
   window.activatePlayMode = activatePlayMode;
 })();
 
+// Zoomies functionality
+(function() {
+  let zoomiesModeActive = false;
+  let zoomiesTimeout = null;
+  let zoomiesAnimationFrame = null;
+  
+  // Activate zoomies mode
+  function activateZoomies() {
+    if (zoomiesModeActive) return; // Already active
+    
+    zoomiesModeActive = true;
+    document.body.classList.add('zoomies-mode');
+    
+    // Unleash dog if leashed
+    if (window.toggleDogLeash && window.isDogLeashed && window.isDogLeashed()) {
+      window.toggleDogLeash();
+    }
+    
+    // Set zoomies mode in dog script
+    if (window.setZoomiesMode) {
+      window.setZoomiesMode(true);
+    }
+    
+    // Random duration between 5-10 seconds
+    const duration = 5000 + Math.random() * 5000; // 5-10 seconds
+    
+    // Show and animate timer inside zoomies button
+    const timerFillEl = document.getElementById('zoomies-timer-fill');
+    if (timerFillEl) {
+      timerFillEl.style.width = '100%';
+      
+      // Animate timer fill from 100% to 0% over duration
+      const startTime = performance.now();
+      
+      function updateTimer() {
+        const elapsed = performance.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const remaining = 100 - (progress * 100);
+        
+        timerFillEl.style.width = remaining + '%';
+        
+        if (progress < 1) {
+          requestAnimationFrame(updateTimer);
+        } else {
+          timerFillEl.style.width = '0%';
+        }
+      }
+      
+      requestAnimationFrame(updateTimer);
+    }
+    
+    // Deactivate after duration
+    zoomiesTimeout = setTimeout(() => {
+      deactivateZoomies();
+    }, duration);
+  }
+  
+  // Deactivate zoomies mode
+  function deactivateZoomies() {
+    zoomiesModeActive = false;
+    document.body.classList.remove('zoomies-mode');
+    
+    // Disable zoomies mode in dog script
+    if (window.setZoomiesMode) {
+      window.setZoomiesMode(false);
+    }
+    
+    
+    // Reset timer
+    const timerFillEl = document.getElementById('zoomies-timer-fill');
+    if (timerFillEl) {
+      timerFillEl.style.width = '0%';
+    }
+    
+    if (zoomiesTimeout) {
+      clearTimeout(zoomiesTimeout);
+      zoomiesTimeout = null;
+    }
+    
+    if (zoomiesAnimationFrame) {
+      cancelAnimationFrame(zoomiesAnimationFrame);
+      zoomiesAnimationFrame = null;
+    }
+  }
+  
+  // Export for use in button handler
+  window.activateZoomies = activateZoomies;
+  window.isZoomiesModeActive = () => zoomiesModeActive;
+})();
+
 // Dog action buttons
 (function() {
   const dogActionBtns = document.querySelectorAll('.dog-action-btn');
@@ -1677,6 +1881,11 @@
         case 'play':
           if (window.activatePlayMode) {
             window.activatePlayMode();
+          }
+          break;
+        case 'zoomies':
+          if (window.activateZoomies) {
+            window.activateZoomies();
           }
           break;
       }
