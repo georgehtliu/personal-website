@@ -106,42 +106,10 @@
   }
 })();
 
-// Theme Toggle
+// Set theme to dark (no toggle)
 (function() {
-  const themeToggle = document.querySelector('.theme-toggle');
   const html = document.documentElement;
-  
-  // Get saved theme or default to dark
-  const savedTheme = localStorage.getItem('theme') || 'dark';
-  html.setAttribute('data-theme', savedTheme);
-  
-  // Update icon based on theme
-  function updateIcon(theme) {
-    const icon = themeToggle.querySelector('.theme-icon');
-    if (theme === 'light') {
-      // Moon icon for switching to dark
-      icon.innerHTML = `
-        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      `;
-    } else {
-      // Sun icon for switching to light
-      icon.innerHTML = `
-        <circle cx="12" cy="12" r="5" fill="none" stroke="currentColor" stroke-width="2"/>
-        <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      `;
-    }
-  }
-  
-  updateIcon(savedTheme);
-  
-  themeToggle.addEventListener('click', () => {
-    const currentTheme = html.getAttribute('data-theme');
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    
-    html.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
-    updateIcon(newTheme);
-  });
+  html.setAttribute('data-theme', 'dark');
 })();
 
 // Respect reduced motion preferences
@@ -160,22 +128,6 @@
   prefersReducedMotion.addEventListener('change', handleReducedMotion);
 })();
 
-// Smooth scroll for anchor links
-document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-  anchor.addEventListener('click', function (e) {
-    const href = this.getAttribute('href');
-    if (href === '#' || href === '') return;
-    
-    e.preventDefault();
-    const target = document.querySelector(href);
-    if (target) {
-      target.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start'
-      });
-    }
-  });
-});
 
 // Fade in on load
 (function() {
@@ -563,9 +515,16 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     prevDogY = dogY;
     
     if (isLeashed) {
-      // Smoothly return to original position (which updates with scroll)
+      // For leashed mode, always keep dog vertically centered in viewport
+      const dogRadius = dogOffset;
       targetX = originalX;
-      targetY = originalY;
+      targetY = window.innerHeight / 2; // Always centered vertically
+      
+      // Constrain to viewport
+      targetX = Math.max(dogRadius, Math.min(window.innerWidth - dogRadius, targetX));
+      targetY = Math.max(dogRadius, Math.min(window.innerHeight - dogRadius, targetY));
+      
+      // Smoothly move to target position
       dogX += (targetX - dogX) * 0.1;
       dogY += (targetY - dogY) * 0.1;
       // Reset velocity when leashed
@@ -684,57 +643,131 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     particle.style.top = y + 'px';
     document.body.appendChild(particle);
     
-    // Get dog position
+    // Get dog element
     const dog = document.querySelector('.dog-img');
     if (!dog) {
       particle.remove();
       return;
     }
     
-    const dogRect = dog.getBoundingClientRect();
-    const dogX = dogRect.left + dogRect.width / 2;
-    const dogY = dogRect.top + dogRect.height / 2;
-    
-    // Calculate distance and direction
-    const dx = dogX - x;
-    const dy = dogY - y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    
     // Animation parameters
     const duration = 1500 + Math.random() * 500; // 1.5-2 seconds
     const startTime = performance.now();
+    const startX = x;
+    const startY = y;
     
-    // Space gravity effect - particles curve toward dog
+    // Space gravity effect - particles curve toward dog (tracking current position)
     function animate() {
       const elapsed = performance.now() - startTime;
       const progress = Math.min(elapsed / duration, 1);
       
+      // Get current dog position (updates as dog moves)
+      const dogRect = dog.getBoundingClientRect();
+      const dogX = dogRect.left + dogRect.width / 2;
+      const dogY = dogRect.top + dogRect.height / 2;
+      
+      // Calculate current distance and direction to dog
+      const currentParticleX = parseFloat(particle.style.left) || startX;
+      const currentParticleY = parseFloat(particle.style.top) || startY;
+      const dx = dogX - currentParticleX;
+      const dy = dogY - currentParticleY;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      // If very close to dog, remove particle and spawn hearts
+      if (distance < 20) {
+        particle.remove();
+        createHeartParticles(dogX, dogY);
+        return;
+      }
+      
       // Easing function for smooth deceleration
       const easeOut = 1 - Math.pow(1 - progress, 3);
       
-      // Calculate position with gravity curve
-      // Add some randomness for natural movement
+      // Move toward current dog position with gravity curve
+      const speed = 2 + (1 - progress) * 1; // Faster at start, slower near end
+      const moveX = (dx / distance) * speed;
+      const moveY = (dy / distance) * speed;
+      
+      // Add gravity curve effect
       const gravityCurve = Math.sin(progress * Math.PI) * 0.3;
-      const currentX = x + dx * easeOut + (Math.random() - 0.5) * 20 * (1 - progress);
-      const currentY = y + dy * easeOut + gravityCurve * distance * 0.2;
+      const newX = currentParticleX + moveX + (Math.random() - 0.5) * 5 * (1 - progress);
+      const newY = currentParticleY + moveY + gravityCurve * 10;
       
       // Scale down as it approaches dog
       const scale = 1 - progress * 0.5;
-      const opacity = 1 - progress;
+      const opacity = 1 - progress * 0.7; // Keep some opacity until very close
       
-      particle.style.left = currentX + 'px';
-      particle.style.top = currentY + 'px';
+      particle.style.left = newX + 'px';
+      particle.style.top = newY + 'px';
       particle.style.transform = `scale(${scale})`;
       particle.style.opacity = opacity;
       
-      if (progress < 1) {
+      if (progress < 1 && distance >= 20) {
         requestAnimationFrame(animate);
       } else {
+        // Final check - spawn hearts at dog's current position
+        const finalDogRect = dog.getBoundingClientRect();
+        const finalDogX = finalDogRect.left + finalDogRect.width / 2;
+        const finalDogY = finalDogRect.top + finalDogRect.height / 2;
         particle.remove();
+        createHeartParticles(finalDogX, finalDogY);
       }
     }
     
     requestAnimationFrame(animate);
+  }
+  
+  // Create heart particles (Minecraft style)
+  function createHeartParticles(x, y) {
+    const heartCount = 2 + Math.floor(Math.random() * 2); // 2-3 hearts
+    
+    for (let i = 0; i < heartCount; i++) {
+      setTimeout(() => {
+        const heart = document.createElement('div');
+        heart.className = 'heart-particle';
+        heart.textContent = '♥';
+        heart.style.left = x + (Math.random() - 0.5) * 30 + 'px';
+        heart.style.top = y + (Math.random() - 0.5) * 30 + 'px';
+        document.body.appendChild(heart);
+        
+        // Animation parameters
+        const duration = 1000 + Math.random() * 500; // 1-1.5 seconds
+        const startTime = performance.now();
+        const startX = parseFloat(heart.style.left);
+        const startY = parseFloat(heart.style.top);
+        const driftX = (Math.random() - 0.5) * 40; // Random horizontal drift
+        const riseDistance = 30 + Math.random() * 20; // Rise upward
+        
+        function animateHeart() {
+          const elapsed = performance.now() - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+          
+          // Easing function for smooth movement
+          const easeOut = 1 - Math.pow(1 - progress, 2);
+          
+          // Calculate position (float upward with slight drift)
+          const currentX = startX + driftX * progress;
+          const currentY = startY - riseDistance * easeOut;
+          
+          // Fade out as it rises
+          const opacity = 1 - progress;
+          const scale = 0.8 + progress * 0.2; // Slight scale up
+          
+          heart.style.left = currentX + 'px';
+          heart.style.top = currentY + 'px';
+          heart.style.opacity = opacity;
+          heart.style.transform = `scale(${scale})`;
+          
+          if (progress < 1) {
+            requestAnimationFrame(animateHeart);
+          } else {
+            heart.remove();
+          }
+        }
+        
+        requestAnimationFrame(animateHeart);
+      }, i * 100); // Stagger heart spawns slightly
+    }
   }
   
   // Handle feed mode click
