@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Personal website — notes, blog, bookmarks">
+  <title>personal site</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <nav class="header-nav">
+      <a href="#notes" class="nav-link">notes</a>
+      <a href="#blog" class="nav-link">blog</a>
+      <a href="#bookmarks" class="nav-link">bookmarks</a>
+      <span class="keyboard-hint" aria-label="Keyboard shortcuts">⌘K</span>
+    </nav>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-logo">
+      <span class="logo-text">george</span>
+    </div>
+    
+    <div class="hero-name">
+      <span class="name-text">George Liu</span>
+    </div>
+
+    <div class="mascot" aria-hidden="true">
+      <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="50" cy="50" r="45" fill="currentColor" opacity="0.8"/>
+        <circle cx="40" cy="45" r="5" fill="white"/>
+        <circle cx="60" cy="45" r="5" fill="white"/>
+        <path d="M 35 60 Q 50 70 65 60" stroke="white" stroke-width="3" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+  </section>
+
+  <!-- Bio Section -->
+  <section class="bio">
+    <p>
+      building things on the web. currently working on <a href="#" class="highlight-link">developer tools</a> and 
+      <a href="#" class="highlight-link">design systems</a>. interested in 
+      <span class="highlight-tag">minimalism</span>, 
+      <span class="highlight-tag">accessibility</span>, and 
+      <span class="highlight-tag">craft</span>.
+    </p>
+    <p>
+      sometimes i write about code, sometimes about other things. you can find my thoughts 
+      <a href="#" class="highlight-link">here</a> or get in touch 
+      <a href="#" class="highlight-link">elsewhere</a>.
+    </p>
+  </section>
+
+  <!-- Timeline Section -->
+  <section class="timeline">
+    <div class="timeline-item">
+      <div class="timeline-icon">
+        <div class="icon-circle">G</div>
+      </div>
+      <div class="timeline-content">
+        <a href="#" class="timeline-title">senior engineer</a>
+        <p class="timeline-descriptor">building developer tools and platforms</p>
+      </div>
+      <div class="timeline-year">2024</div>
+    </div>
+
+    <div class="timeline-item">
+      <div class="timeline-icon">
+        <div class="icon-circle">T</div>
+      </div>
+      <div class="timeline-content">
+        <a href="#" class="timeline-title">tech lead</a>
+        <p class="timeline-descriptor">design systems and component libraries</p>
+      </div>
+      <div class="timeline-year">2022</div>
+    </div>
+
+    <div class="timeline-item">
+      <div class="timeline-icon">
+        <div class="icon-circle">S</div>
+      </div>
+      <div class="timeline-content">
+        <a href="#" class="timeline-title">software engineer</a>
+        <p class="timeline-descriptor">frontend infrastructure and tooling</p>
+      </div>
+      <div class="timeline-year">2020</div>
+    </div>
+
+    <div class="timeline-item">
+      <div class="timeline-icon">
+        <div class="icon-circle">D</div>
+      </div>
+      <div class="timeline-content">
+        <a href="#" class="timeline-title">designer</a>
+        <p class="timeline-descriptor">ui/ux and visual design</p>
+      </div>
+      <div class="timeline-year">2018</div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p class="footer-text">
+      last listened to: <span class="footer-accent">some ambient thing</span>
+    </p>
+    <button class="theme-toggle" aria-label="Toggle dark mode">
+      <svg class="theme-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="5"/>
+        <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+      </svg>
+    </button>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
