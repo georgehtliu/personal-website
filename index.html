@@ -177,7 +177,20 @@
 
   <!-- Leash SVG -->
   <svg class="leash-svg" aria-hidden="true">
-    <line class="leash-line" stroke="currentColor" stroke-width="3" fill="none"/>
+    <defs>
+      <!-- Silver gradient for chain links -->
+      <linearGradient id="silverGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#E8E8E8;stop-opacity:1" />
+        <stop offset="50%" style="stop-color:#C0C0C0;stop-opacity:1" />
+        <stop offset="100%" style="stop-color:#A8A8A8;stop-opacity:1" />
+      </linearGradient>
+      <!-- Shadow gradient for depth -->
+      <linearGradient id="silverShadow" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#808080;stop-opacity:0.6" />
+        <stop offset="100%" style="stop-color:#606060;stop-opacity:0.8" />
+      </linearGradient>
+    </defs>
+    <g class="leash-chain"></g>
   </svg>
 
   <!-- Dog GIF (stationary on left) -->

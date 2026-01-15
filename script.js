@@ -414,10 +414,10 @@
 (function() {
   const dog = document.querySelector('.dog-img');
   const dogContainer = document.querySelector('.dog-container');
-  const leashLine = document.querySelector('.leash-line');
+  const leashChain = document.querySelector('.leash-chain');
   const leashSvg = document.querySelector('.leash-svg');
   const contentContainer = document.querySelector('.content-container');
-  if (!dog || !dogContainer || !leashLine || !leashSvg || !contentContainer) return;
+  if (!dog || !dogContainer || !leashChain || !leashSvg || !contentContainer) return;
   
   const respectsReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (respectsReducedMotion) {
@@ -664,17 +664,76 @@
   }
   
   // Update leash line
+  // Function to draw a single chain link
+  function drawChainLink(x, y, angle, size, isAlternating) {
+    const link = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    const rotationDeg = (angle * 180 / Math.PI) + (isAlternating ? 90 : 0);
+    link.setAttribute('transform', `translate(${x}, ${y}) rotate(${rotationDeg})`);
+    
+    // Chain link dimensions
+    const linkWidth = size * 0.75;
+    const linkHeight = size * 0.5;
+    const thickness = size * 0.22;
+    
+    // Main link body - outer ellipse with silver gradient
+    const outerLink = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+    outerLink.setAttribute('cx', '0');
+    outerLink.setAttribute('cy', '0');
+    outerLink.setAttribute('rx', linkWidth);
+    outerLink.setAttribute('ry', linkHeight);
+    outerLink.setAttribute('fill', 'url(#silverGradient)');
+    outerLink.setAttribute('stroke', '#707070');
+    outerLink.setAttribute('stroke-width', thickness * 0.3);
+    
+    // Inner hole
+    const innerHole = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+    innerHole.setAttribute('cx', '0');
+    innerHole.setAttribute('cy', '0');
+    innerHole.setAttribute('rx', linkWidth * 0.55);
+    innerHole.setAttribute('ry', linkHeight * 0.55);
+    innerHole.setAttribute('fill', 'url(#silverShadow)');
+    
+    // Opening in the link (for connecting to next link)
+    if (!isAlternating) {
+      const opening = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      opening.setAttribute('x', linkWidth * 0.7);
+      opening.setAttribute('y', -linkHeight * 0.3);
+      opening.setAttribute('width', linkWidth * 0.3);
+      opening.setAttribute('height', linkHeight * 0.6);
+      opening.setAttribute('fill', '#202020');
+      opening.setAttribute('rx', thickness * 0.3);
+      link.appendChild(opening);
+    }
+    
+    // Top highlight for metallic shine
+    const highlight = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+    highlight.setAttribute('cx', linkWidth * -0.25);
+    highlight.setAttribute('cy', linkHeight * -0.35);
+    highlight.setAttribute('rx', linkWidth * 0.3);
+    highlight.setAttribute('ry', linkHeight * 0.25);
+    highlight.setAttribute('fill', 'rgba(255, 255, 255, 0.6)');
+    
+    // Bottom shadow
+    const shadow = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+    shadow.setAttribute('cx', linkWidth * 0.25);
+    shadow.setAttribute('cy', linkHeight * 0.35);
+    shadow.setAttribute('rx', linkWidth * 0.3);
+    shadow.setAttribute('ry', linkHeight * 0.25);
+    shadow.setAttribute('fill', 'rgba(0, 0, 0, 0.3)');
+    
+    link.appendChild(outerLink);
+    link.appendChild(innerHole);
+    link.appendChild(highlight);
+    link.appendChild(shadow);
+    
+    return link;
+  }
+  
   function updateLeash() {
     // Hide leash on small screens (same behavior as dog)
     if (isSmallScreen()) {
       leashSvg.style.cssText = 'opacity: 0 !important; visibility: hidden !important; display: none !important; transition: none !important;';
-      // Reset leash line coordinates and make stroke transparent
-      leashLine.setAttribute('x1', '0');
-      leashLine.setAttribute('y1', '0');
-      leashLine.setAttribute('x2', '0');
-      leashLine.setAttribute('y2', '0');
-      leashLine.setAttribute('stroke-width', '0');
-      leashLine.setAttribute('stroke', 'transparent');
+      leashChain.innerHTML = '';
       return;
     }
     
@@ -682,13 +741,7 @@
     if (!isLeashed) {
       // Completely hide leash when unleashed
       leashSvg.style.cssText = 'opacity: 0 !important; visibility: hidden !important; display: none !important; transition: none !important;';
-      // Reset leash line coordinates and make stroke transparent
-      leashLine.setAttribute('x1', '0');
-      leashLine.setAttribute('y1', '0');
-      leashLine.setAttribute('x2', '0');
-      leashLine.setAttribute('y2', '0');
-      leashLine.setAttribute('stroke-width', '0');
-      leashLine.setAttribute('stroke', 'transparent');
+      leashChain.innerHTML = '';
       // Reset dog scale when not leashed, but preserve orientation
       // Dog faces cursor: if cursor on right, face right (flip); if on left, face left (default)
       const dogRect = dog.getBoundingClientRect();
@@ -705,10 +758,6 @@
     
     // Leash is on - make it visible
     leashSvg.style.cssText = 'opacity: 1 !important; visibility: visible !important; display: block !important; transition: opacity 0.3s ease !important;';
-    
-    // Restore leash line properties FIRST
-    leashLine.setAttribute('stroke', '#8B4513'); // Restore brown color
-    leashLine.setAttribute('opacity', '1'); // Ensure opacity is 1
     
     const leashPoint = getLeashAttachmentPoint();
     const dogRect = dog.getBoundingClientRect();
@@ -743,12 +792,6 @@
       dog.style.transform = `scaleX(-${scale}) scaleY(${scale})`;
     }
     
-    // Dynamic leash thickness: thinner when stretched, thicker when slack
-    const minStrokeWidth = 1.5;
-    const maxStrokeWidth = 4;
-    const strokeWidth = minStrokeWidth + (maxStrokeWidth - minStrokeWidth) * (1 - normalizedDistance);
-    leashLine.setAttribute('stroke-width', strokeWidth);
-    
     // Update leash SVG position and size
     leashSvg.style.position = 'fixed';
     leashSvg.style.top = '0';
@@ -758,11 +801,34 @@
     leashSvg.style.pointerEvents = 'none';
     leashSvg.style.zIndex = '900'; // Below dog, above stars
     
-    // Set leash line coordinates (straight line) - ensure they're numbers
-    leashLine.setAttribute('x1', dogCenterX.toString());
-    leashLine.setAttribute('y1', dogCenterY.toString());
-    leashLine.setAttribute('x2', leashPoint.x.toString());
-    leashLine.setAttribute('y2', leashPoint.y.toString());
+    // Clear existing chain links
+    leashChain.innerHTML = '';
+    
+    // Calculate angle of the leash
+    const angle = Math.atan2(dy, dx);
+    
+    // Dynamic chain link size based on distance (thinner when stretched)
+    const minLinkSize = 8;
+    const maxLinkSize = 14;
+    const linkSize = minLinkSize + (maxLinkSize - minLinkSize) * (1 - normalizedDistance);
+    
+    // Calculate number of links based on distance
+    const linkSpacing = linkSize * 1.2; // Spacing between link centers
+    const numLinks = Math.max(3, Math.floor(distance / linkSpacing));
+    
+    // Draw chain links along the path
+    for (let i = 0; i <= numLinks; i++) {
+      const t = i / numLinks;
+      const x = leashPoint.x + dx * t;
+      const y = leashPoint.y + dy * t;
+      
+      // Alternate link orientation for interlocking chain effect
+      const isAlternating = i % 2 === 1;
+      const linkAngle = angle + (isAlternating ? Math.PI / 2 : 0);
+      
+      const link = drawChainLink(x, y, linkAngle, linkSize, isAlternating);
+      leashChain.appendChild(link);
+    }
   }
   
   
@@ -1157,14 +1223,8 @@
     } else {
       // Ensure leash stays hidden when unleashed or in zoomies - completely remove it from rendering
       leashSvg.style.cssText = 'opacity: 0 !important; visibility: hidden !important; display: none !important; pointer-events: none !important;';
-      // Clear leash line completely
-      leashLine.setAttribute('x1', '0');
-      leashLine.setAttribute('y1', '0');
-      leashLine.setAttribute('x2', '0');
-      leashLine.setAttribute('y2', '0');
-      leashLine.setAttribute('stroke', 'transparent');
-      leashLine.setAttribute('stroke-width', '0');
-      leashLine.setAttribute('opacity', '0');
+      // Clear chain links completely
+      leashChain.innerHTML = '';
       // Note: Dog orientation is already updated in updateDogPosition() for unleashed mode
     }
     requestAnimationFrame(animate);
