@@ -436,7 +436,7 @@
   const dogSize = 180; // Dog width/height
   const dogOffset = dogSize / 2; // Half of dog size for centering
   
-  let isLeashed = true;
+  let isLeashed = false; // Start unleashed by default
   let isZoomiesMode = false;
   // Initialize Y positions to viewport center instead of 0
   const initialCenterY = window.innerHeight / 2;
@@ -496,15 +496,24 @@
   function initializeDog() {
     calculateOriginalPosition();
     
-    // Force initial Y position to be centered
     const dogRadius = dogOffset;
-    const centeredY = Math.max(dogRadius, Math.min(window.innerHeight - dogRadius, window.innerHeight / 2));
     
-    dogX = originalX;
-    dogY = centeredY; // Start at center
-    originalY = centeredY; // Update originalY to match
-    targetX = originalX;
-    targetY = centeredY;
+    if (isLeashed) {
+      // Leashed: start at original position (left side, centered vertically)
+      const centeredY = Math.max(dogRadius, Math.min(window.innerHeight - dogRadius, window.innerHeight / 2));
+      dogX = originalX;
+      dogY = centeredY;
+      originalY = centeredY;
+      targetX = originalX;
+      targetY = centeredY;
+    } else {
+      // Unleashed: start at a random position around the container
+      generateRandomTarget();
+      dogX = targetX;
+      dogY = targetY;
+      // Generate a new target for the dog to move toward
+      generateRandomTarget();
+    }
     
     // Use fixed positioning to ensure viewport-relative positioning
     dog.style.position = 'fixed';
@@ -522,15 +531,30 @@
   // Initialize button text
   updateLeashButtonText();
   
-  // Force immediate centering on load
+  // Force immediate positioning on load
   window.addEventListener('load', () => {
     const dogRadius = dogOffset;
-    const centeredY = Math.max(dogRadius, Math.min(window.innerHeight - dogRadius, window.innerHeight / 2));
-    dogY = centeredY;
-    originalY = centeredY;
-    targetY = centeredY;
-    dog.style.top = (dogY - dogOffset) + 'px';
-    dogContainer.style.top = (dogY - dogOffset) + 'px';
+    if (isLeashed) {
+      // Leashed: center vertically
+      const centeredY = Math.max(dogRadius, Math.min(window.innerHeight - dogRadius, window.innerHeight / 2));
+      dogY = centeredY;
+      originalY = centeredY;
+      targetY = centeredY;
+      dog.style.top = (dogY - dogOffset) + 'px';
+      dogContainer.style.top = (dogY - dogOffset) + 'px';
+    } else {
+      // Unleashed: ensure random position is set
+      if (dogX === 0 || dogY === 0) {
+        generateRandomTarget();
+        dogX = targetX;
+        dogY = targetY;
+        generateRandomTarget(); // Set a new target to move toward
+        dog.style.left = (dogX - dogOffset) + 'px';
+        dog.style.top = (dogY - dogOffset) + 'px';
+        dogContainer.style.left = (dogX - dogOffset) + 'px';
+        dogContainer.style.top = (dogY - dogOffset) + 'px';
+      }
+    }
   });
   
   // Constrain position to viewport bounds
@@ -581,39 +605,55 @@
   // Generate random target for roaming (outside content container)
   function generateRandomTarget() {
     const rect = contentContainer.getBoundingClientRect();
-    const padding = 100;
+    const padding = 80; // Distance from container edge
     const dogRadius = dogOffset;
     
-    // Generate random position, but exclude the content container area
-    let attempts = 0;
-    let validPosition = false;
+    // Calculate container center
+    const containerCenterX = rect.left + (rect.right - rect.left) / 2;
+    const containerCenterY = rect.top + (rect.bottom - rect.top) / 2;
     
-    while (!validPosition && attempts < 50) {
-      // Generate random position within viewport bounds
-      targetX = dogRadius + Math.random() * (window.innerWidth - dogRadius * 2);
-      targetY = dogRadius + Math.random() * (window.innerHeight - dogRadius * 2);
-      
-      // Constrain to viewport first
-      const constrained = constrainToViewport(targetX, targetY);
-      targetX = constrained.x;
-      targetY = constrained.y;
-      
-      // Check if position is outside the content container (with padding for dog size)
-      const isOutside = targetX < (rect.left - dogRadius) || 
-                       targetX > (rect.right + dogRadius) ||
-                       targetY < (rect.top - dogRadius) || 
-                       targetY > (rect.bottom + dogRadius);
-      
-      if (isOutside) {
-        validPosition = true;
-      }
-      attempts++;
-    }
+    // Calculate container dimensions with padding
+    const containerWidth = (rect.right - rect.left) + padding * 2;
+    const containerHeight = (rect.bottom - rect.top) + padding * 2;
     
-    // Fallback: if we can't find a valid position, use a position to the left of container
-    if (!validPosition) {
-      targetX = Math.max(dogRadius, rect.left - dogRadius - 50);
-      targetY = Math.max(dogRadius, Math.min(window.innerHeight - dogRadius, window.innerHeight / 2));
+    // Generate a position around the container (orbiting pattern)
+    // Use polar coordinates to create positions around the container
+    const angle = Math.random() * Math.PI * 2; // Random angle around container
+    const distanceVariation = 0.3 + Math.random() * 0.4; // 30-70% of max distance
+    
+    // Calculate distance from container center
+    const maxDistanceX = Math.max(containerWidth / 2, window.innerWidth * 0.3);
+    const maxDistanceY = Math.max(containerHeight / 2, window.innerHeight * 0.3);
+    
+    // Use elliptical orbit around container
+    const orbitX = Math.cos(angle) * maxDistanceX * distanceVariation;
+    const orbitY = Math.sin(angle) * maxDistanceY * distanceVariation;
+    
+    // Calculate target position
+    targetX = containerCenterX + orbitX;
+    targetY = containerCenterY + orbitY;
+    
+    // Constrain to viewport bounds
+    const constrained = constrainToViewport(targetX, targetY);
+    targetX = constrained.x;
+    targetY = constrained.y;
+    
+    // Ensure we're not too close to container (with some randomness)
+    const minDistanceFromContainer = dogRadius + padding;
+    const dx = targetX - containerCenterX;
+    const dy = targetY - containerCenterY;
+    const distanceFromCenter = Math.sqrt(dx * dx + dy * dy);
+    
+    // If too close to container, push it further out
+    if (distanceFromCenter < minDistanceFromContainer) {
+      const angleToTarget = Math.atan2(dy, dx);
+      targetX = containerCenterX + Math.cos(angleToTarget) * minDistanceFromContainer;
+      targetY = containerCenterY + Math.sin(angleToTarget) * minDistanceFromContainer;
+      
+      // Constrain again after adjustment
+      const reConstrained = constrainToViewport(targetX, targetY);
+      targetX = reConstrained.x;
+      targetY = reConstrained.y;
     }
   }
   
@@ -648,15 +688,12 @@
       targetY = Math.max(dogRadius, Math.min(window.innerHeight - dogRadius, window.innerHeight / 2));
       originalY = targetY; // Update originalY to match
     } else {
-      // Start roaming - ensure dog is truly unleashed
-      // Clear any leash-related constraints
+      // When unleashed, immediately generate a target around the container
+      // This ensures the dog doesn't stay stuck on the left side
       generateRandomTarget();
-      // Make sure target is set and dog will move
-      const dogRadius = dogOffset;
-      if (targetX === originalX && targetY === originalY) {
-        // Force a new target if still at original position
-        generateRandomTarget();
-      }
+      // Reset velocity to start fresh movement
+      velocityX = 0;
+      velocityY = 0;
     }
     
     // Force immediate visual update
@@ -907,14 +944,18 @@
     const rect = contentContainer.getBoundingClientRect();
     const dogRadius = dogOffset;
     
+    // Calculate container center
+    const containerCenterX = rect.left + (rect.right - rect.left) / 2;
+    const containerCenterY = rect.top + (rect.bottom - rect.top) / 2;
+    
     // Normalize velocity to get direction
     const speed = Math.sqrt(vx * vx + vy * vy);
-    if (speed > 0) {
+    if (speed > 0.1) {
       const dirX = vx / speed;
       const dirY = vy / speed;
       
-      // Generate target in the rebounded direction
-      const distance = 200 + Math.random() * 200; // Random distance
+      // Generate target in the rebounded direction, away from container
+      const distance = 150 + Math.random() * 150; // Random distance
       targetX = currentX + dirX * distance;
       targetY = currentY + dirY * distance;
       
@@ -923,21 +964,31 @@
       targetX = viewportConstrained.x;
       targetY = viewportConstrained.y;
       
-      // If target would be inside container, adjust it
+      // If target would be inside container, push it outside using orbital pattern
       if (targetX >= (rect.left - dogRadius) && targetX <= (rect.right + dogRadius) &&
           targetY >= (rect.top - dogRadius) && targetY <= (rect.bottom + dogRadius)) {
-        // Push target outside container
-        if (Math.abs(targetX - rect.left) < Math.abs(targetX - rect.right)) {
-          targetX = Math.max(dogRadius, rect.left - dogRadius - 50);
-        } else {
-          targetX = Math.min(window.innerWidth - dogRadius, rect.right + dogRadius + 50);
-        }
-        // Ensure still within viewport
-        targetX = Math.max(dogRadius, Math.min(window.innerWidth - dogRadius, targetX));
-        targetY = Math.max(dogRadius, Math.min(window.innerHeight - dogRadius, targetY));
+        // Calculate angle from container center to current position
+        const dx = currentX - containerCenterX;
+        const dy = currentY - containerCenterY;
+        const angle = Math.atan2(dy, dx);
+        
+        // Push target further out in the same direction
+        const padding = 80;
+        const minDistance = Math.max(
+          (rect.right - rect.left) / 2 + padding,
+          (rect.bottom - rect.top) / 2 + padding
+        );
+        
+        targetX = containerCenterX + Math.cos(angle) * minDistance;
+        targetY = containerCenterY + Math.sin(angle) * minDistance;
+        
+        // Constrain to viewport again
+        const reConstrained = constrainToViewport(targetX, targetY);
+        targetX = reConstrained.x;
+        targetY = reConstrained.y;
       }
     } else {
-      // Fallback: generate random target outside container
+      // Fallback: generate random target around container (not biased to left)
       generateRandomTarget();
     }
   }
