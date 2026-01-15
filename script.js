@@ -731,6 +731,8 @@
   const gravityWavesSvg = document.querySelector('.gravity-waves-svg');
   const gravityWavesGroup = document.querySelector('.gravity-waves-group');
   const contentContainer = document.querySelector('.content-container');
+  const energyBarFill = document.getElementById('dog-energy-fill');
+  const sleepBubbles = document.getElementById('sleep-bubbles');
   if (!dog || !dogContainer || !gravityWavesSvg || !gravityWavesGroup || !contentContainer) return;
   
   const respectsReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -770,6 +772,19 @@
   let prevDogX = 0;
   let prevDogY = initialCenterY;
   let lastZoomiesTargetTime = 0;
+  
+  // Energy system
+  let dogEnergy = 100; // Start at full energy (0-100)
+  const ENERGY_MAX = 100;
+  const ENERGY_MIN = 0;
+  const ENERGY_RECHARGE_THRESHOLD = 25; // Recharge until 25%
+  let lastEnergyUpdate = performance.now();
+  const ENERGY_DRAIN_RATE = 0.5; // Energy per second when unleashed
+  const ENERGY_ZOOMIES_DRAIN_RATE = 9; // Energy per second when in zoomies (drains 3x faster than before)
+  const ENERGY_RECHARGE_RATE = 17; // Energy per second when leashed and below threshold
+  const ENERGY_PLAY_DRAIN_PER_PIXEL = 0.01; // Energy per pixel traveled in play mode (more than normal)
+  let lastPlayModePosition = { x: 0, y: 0 };
+  let isInPlayMode = false;
   
   // Get mouse position from global tracker
   function getMousePosition() {
@@ -958,6 +973,10 @@
   
   initializeDog();
   
+  // Initialize energy bar
+  updateEnergyBar();
+  lastEnergyUpdate = performance.now();
+  
   // Initialize button text
   updateLeashButtonText();
   
@@ -1097,7 +1116,140 @@
     }
   }
   
+  // Update energy bar visual
+  function updateEnergyBar() {
+    if (!energyBarFill) return;
+    energyBarFill.style.width = dogEnergy + '%';
+    
+    // Change color based on energy level
+    if (dogEnergy > 60) {
+      energyBarFill.style.background = 'linear-gradient(90deg, #4ade80 0%, #22c55e 100%)'; // Green
+    } else if (dogEnergy > 30) {
+      energyBarFill.style.background = 'linear-gradient(90deg, #fbbf24 0%, #f59e0b 100%)'; // Yellow
+    } else {
+      energyBarFill.style.background = 'linear-gradient(90deg, #ef4444 0%, #dc2626 100%)'; // Red
+    }
+  }
+  
+  // Update energy based on current state
+  function updateEnergy() {
+    const now = performance.now();
+    const deltaTime = (now - lastEnergyUpdate) / 1000; // Convert to seconds
+    lastEnergyUpdate = now;
+    
+    // Check if play mode is active
+    const playModeActive = window.isPlayModeActive ? window.isPlayModeActive() : false;
+    
+    // Energy drain when in zoomies mode (drains fastest)
+    if (isZoomiesMode && dogEnergy > ENERGY_MIN) {
+      dogEnergy = Math.max(ENERGY_MIN, dogEnergy - (ENERGY_ZOOMIES_DRAIN_RATE * deltaTime));
+      
+      // Force leash when energy hits 0
+      if (dogEnergy <= ENERGY_MIN) {
+        // Deactivate zoomies mode
+        if (window.deactivateZoomies) {
+          window.deactivateZoomies();
+        }
+        if (!isLeashed) {
+          isLeashed = true;
+          updateLeashButtonText();
+          calculateOriginalPosition();
+          targetX = originalX;
+          const dogRadius = dogOffset;
+          targetY = Math.max(dogRadius, Math.min(window.innerHeight - dogRadius, window.innerHeight / 2));
+          originalY = targetY;
+          updateLeash();
+        }
+      }
+    }
+    // Energy drain in play mode based on distance traveled
+    else if (playModeActive && !isLeashed && dogEnergy > ENERGY_MIN) {
+      // Calculate distance traveled since last update
+      const distanceTraveled = Math.sqrt(
+        Math.pow(dogX - lastPlayModePosition.x, 2) + 
+        Math.pow(dogY - lastPlayModePosition.y, 2)
+      );
+      
+      // Drain energy based on distance traveled (more than normal unleashed)
+      const energyDrained = distanceTraveled * ENERGY_PLAY_DRAIN_PER_PIXEL;
+      dogEnergy = Math.max(ENERGY_MIN, dogEnergy - energyDrained);
+      
+      // Update last position for next frame
+      lastPlayModePosition.x = dogX;
+      lastPlayModePosition.y = dogY;
+      
+      // Force leash when energy hits 0
+      if (dogEnergy <= ENERGY_MIN) {
+        // Deactivate play mode
+        if (window.deactivatePlayMode) {
+          window.deactivatePlayMode();
+        }
+        if (!isLeashed) {
+          isLeashed = true;
+          updateLeashButtonText();
+          calculateOriginalPosition();
+          targetX = originalX;
+          const dogRadius = dogOffset;
+          targetY = Math.max(dogRadius, Math.min(window.innerHeight - dogRadius, window.innerHeight / 2));
+          originalY = targetY;
+          updateLeash();
+        }
+      }
+    }
+    // Energy drain when unleashed (but not in zoomies or play mode)
+    else if (!isLeashed && dogEnergy > ENERGY_MIN) {
+      dogEnergy = Math.max(ENERGY_MIN, dogEnergy - (ENERGY_DRAIN_RATE * deltaTime));
+      
+      // Force leash when energy hits 0
+      if (dogEnergy <= ENERGY_MIN) {
+        if (!isLeashed) {
+          isLeashed = true;
+          updateLeashButtonText();
+          calculateOriginalPosition();
+          targetX = originalX;
+          const dogRadius = dogOffset;
+          targetY = Math.max(dogRadius, Math.min(window.innerHeight - dogRadius, window.innerHeight / 2));
+          originalY = targetY;
+          updateLeash();
+        }
+      }
+    }
+    
+    // Reset play mode position tracking when play mode ends
+    if (!playModeActive && isInPlayMode) {
+      isInPlayMode = false;
+    }
+    // Initialize play mode position when play mode starts
+    if (playModeActive && !isInPlayMode) {
+      isInPlayMode = true;
+      lastPlayModePosition.x = dogX;
+      lastPlayModePosition.y = dogY;
+    }
+    
+    // Energy recharge when leashed - charge gradually all the way to 100%
+    if (isLeashed && dogEnergy < ENERGY_MAX) {
+      dogEnergy = Math.min(ENERGY_MAX, dogEnergy + (ENERGY_RECHARGE_RATE * deltaTime));
+    }
+    
+    updateEnergyBar();
+  }
+  
+  // Modify energy directly (for feed, play, zoomies actions)
+  function modifyEnergy(amount) {
+    dogEnergy = Math.max(ENERGY_MIN, Math.min(ENERGY_MAX, dogEnergy + amount));
+    updateEnergyBar();
+  }
+  
+  // Export energy modification functions
+  window.addDogEnergy = (amount) => modifyEnergy(amount);
+  window.removeDogEnergy = (amount) => modifyEnergy(-amount);
+  
   function toggleLeash() {
+    // Don't allow unleashing if energy is 0
+    if (!isLeashed && dogEnergy <= ENERGY_MIN) {
+      return; // Can't unleash with no energy
+    }
+    
     // Toggle leash state
     isLeashed = !isLeashed;
     
@@ -1130,9 +1282,35 @@
     updateLeash();
   }
   
+  // Update sleep bubbles visibility
+  function updateSleepBubbles() {
+    if (!sleepBubbles) return;
+    
+    // Hide on small screens
+    if (isSmallScreen()) {
+      sleepBubbles.style.display = 'none';
+      return;
+    }
+    
+    // Show sleep bubbles when leashed, hide when unleashed
+    if (isLeashed) {
+      sleepBubbles.style.display = 'flex';
+      sleepBubbles.style.opacity = '1';
+    } else {
+      sleepBubbles.style.display = 'none';
+      sleepBubbles.style.opacity = '0';
+    }
+  }
+  
+  // Initialize sleep bubbles on load
+  updateSleepBubbles();
+  
   function updateLeash() {
     // Update gravity waves
     updateGravityWaves();
+    
+    // Update sleep bubbles
+    updateSleepBubbles();
     
     // Hide on small screens (same behavior as dog)
     if (isSmallScreen()) {
@@ -1568,6 +1746,7 @@
   // Animate leash and dog orientation
   function animate() {
     updateDogPosition();
+    updateEnergy(); // Update energy system
     // Update leash/gravity waves based on state (hide during zoomies mode)
     if (isLeashed && !isSmallScreen() && !isZoomiesMode) {
       // Leashed - show and update gravity waves
@@ -1848,6 +2027,10 @@
       if (distance < 20) {
         particle.remove();
         createHeartParticles(dogX, dogY);
+        // Add energy when food is collected
+        if (window.addDogEnergy) {
+          window.addDogEnergy(5); // +5 energy per food particle
+        }
         return;
       }
       
@@ -1883,6 +2066,10 @@
         const finalDogY = finalDogRect.top + finalDogRect.height / 2;
         particle.remove();
         createHeartParticles(finalDogX, finalDogY);
+        // Add energy when food is collected
+        if (window.addDogEnergy) {
+          window.addDogEnergy(5); // +5 energy per food particle
+        }
       }
     }
     
