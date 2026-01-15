@@ -729,6 +729,61 @@ body.zoomies-mode::before {
   pointer-events: none;
 }
 
+/* Effects Toggle Button (Top Right) */
+.effects-toggle-btn {
+  position: fixed;
+  top: var(--container-padding);
+  right: var(--container-padding);
+  z-index: 1001; /* Above dog actions */
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--outline);
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-family: inherit;
+  cursor: pointer;
+  border-radius: var(--radius-lg);
+  transition: all 0.15s ease-out;
+  white-space: nowrap;
+}
+
+.effects-toggle-btn:hover,
+.effects-toggle-btn:focus {
+  background: rgba(255, 107, 53, 0.1);
+  color: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent), 0 0 8px rgba(255, 107, 53, 0.2);
+  outline: none;
+}
+
+.effects-toggle-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.effects-toggle-text {
+  font-size: 0.875rem;
+}
+
+/* Hide effects when toggled off */
+body.effects-hidden .stars-container,
+body.effects-hidden .galaxy-spiral,
+body.effects-hidden .warp-speed-lines,
+body.effects-hidden .dog-container,
+body.effects-hidden .dog-actions,
+body.effects-hidden .dog-feed-reminder,
+body.effects-hidden .gravity-waves-svg {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
 .feed-btn-text {
   position: relative;
   z-index: 1;

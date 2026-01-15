@@ -3,7 +3,7 @@
   const starsContainer = document.querySelector('.stars-container');
   if (!starsContainer) return;
   
-  const starCount = 50; // Number of stars to generate
+  const starCount = 5; // Number of stars to generate (reduced for performance)
   
   // Colorful star colors (slightly colorful but subtle)
   const starColors = [
@@ -983,6 +983,12 @@
     waveAnimationTime += 0.02;
     if (waveAnimationTime > Math.PI * 2) {
       waveAnimationTime -= Math.PI * 2;
+    }
+    
+    // Hide waves if effects are hidden
+    if (document.body.classList.contains('effects-hidden')) {
+      gravityWavesSvg.style.cssText = 'opacity: 0 !important; visibility: hidden !important; display: none !important;';
+      return;
     }
     
     // Hide waves on small screens
@@ -2943,4 +2949,61 @@
       }
     });
   });
+})();
+
+// Effects Toggle Functionality
+(function() {
+  const effectsToggleBtn = document.getElementById('effects-toggle-btn');
+  if (!effectsToggleBtn) return;
+  
+  const effectsToggleIcon = effectsToggleBtn.querySelector('.effects-toggle-icon');
+  const effectsToggleText = effectsToggleBtn.querySelector('.effects-toggle-text');
+  
+  // Update icon based on state
+  function updateToggleIcon(isHidden) {
+    if (!effectsToggleIcon) return;
+    
+    // Clear existing content
+    effectsToggleIcon.innerHTML = '';
+    
+    if (isHidden) {
+      // Eye icon (show effects)
+      effectsToggleIcon.innerHTML = `
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+        <circle cx="12" cy="12" r="3"></circle>
+      `;
+    } else {
+      // Sparkles/stars icon (hide effects)
+      effectsToggleIcon.innerHTML = `
+        <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path>
+      `;
+    }
+  }
+  
+  // Check localStorage for saved preference
+  const effectsHidden = localStorage.getItem('effectsHidden') === 'true';
+  
+  // Apply initial state
+  if (effectsHidden) {
+    document.body.classList.add('effects-hidden');
+    updateToggleIcon(true);
+    if (effectsToggleText) effectsToggleText.textContent = 'show effects';
+  }
+  
+  // Toggle function
+  function toggleEffects() {
+    const isHidden = document.body.classList.toggle('effects-hidden');
+    
+    // Update button text and icon
+    updateToggleIcon(isHidden);
+    if (effectsToggleText) {
+      effectsToggleText.textContent = isHidden ? 'show effects' : 'hide effects';
+    }
+    
+    // Save preference to localStorage
+    localStorage.setItem('effectsHidden', isHidden.toString());
+  }
+  
+  // Add click event listener
+  effectsToggleBtn.addEventListener('click', toggleEffects);
 })();
