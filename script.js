@@ -414,17 +414,20 @@
 (function() {
   const dog = document.querySelector('.dog-img');
   const dogContainer = document.querySelector('.dog-container');
-  const leashChain = document.querySelector('.leash-chain');
-  const leashSvg = document.querySelector('.leash-svg');
+  const gravityWavesSvg = document.querySelector('.gravity-waves-svg');
+  const gravityWavesGroup = document.querySelector('.gravity-waves-group');
   const contentContainer = document.querySelector('.content-container');
-  if (!dog || !dogContainer || !leashChain || !leashSvg || !contentContainer) return;
+  if (!dog || !dogContainer || !gravityWavesSvg || !gravityWavesGroup || !contentContainer) return;
   
   const respectsReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (respectsReducedMotion) {
     dog.style.display = 'none';
-    leashSvg.style.display = 'none';
+    gravityWavesSvg.style.display = 'none';
     return;
   }
+  
+  // Gravity wave animation state
+  let waveAnimationTime = 0;
   
   // Check if we're on a small screen (same breakpoint as CSS: max-width: 1200px)
   function isSmallScreen() {
@@ -461,13 +464,126 @@
     mouseY = pos.y;
   }
   
-  // Function to get leash attachment point (middle of left edge of content container)
-  function getLeashAttachmentPoint() {
-    const rect = contentContainer.getBoundingClientRect();
-    return {
-      x: rect.left, // Left edge of container
-      y: rect.top + (rect.bottom - rect.top) / 2  // Middle vertically
-    };
+  // Function to draw/update animated gravity waves around the dog when leashed
+  function updateGravityWaves() {
+    // Update animation time
+    waveAnimationTime += 0.02;
+    if (waveAnimationTime > Math.PI * 2) {
+      waveAnimationTime -= Math.PI * 2;
+    }
+    
+    // Hide waves on small screens
+    if (isSmallScreen()) {
+      gravityWavesSvg.style.cssText = 'opacity: 0 !important; visibility: hidden !important; display: none !important;';
+      return;
+    }
+    
+    // Hide waves when unleashed
+    if (!isLeashed) {
+      gravityWavesSvg.style.cssText = 'opacity: 0 !important; visibility: hidden !important; display: none !important;';
+      return;
+    }
+    
+    // Show waves when leashed
+    gravityWavesSvg.style.cssText = 'opacity: 1 !important; visibility: visible !important; display: block !important;';
+    
+    // Update waves SVG position and size
+    gravityWavesSvg.style.position = 'fixed';
+    gravityWavesSvg.style.top = '0';
+    gravityWavesSvg.style.left = '0';
+    gravityWavesSvg.style.width = '100%';
+    gravityWavesSvg.style.height = '100%';
+    gravityWavesSvg.style.pointerEvents = 'none';
+    gravityWavesSvg.style.zIndex = '895'; // Below dog, above stars
+    
+    // Get dog position
+    const dogRect = dog.getBoundingClientRect();
+    const dogCenterX = dogRect.left + dogRect.width / 2;
+    const dogCenterY = dogRect.top + dogRect.height / 2;
+    
+    // Clear existing wave elements
+    gravityWavesGroup.innerHTML = '';
+    
+    // Create waves group centered on dog
+    const wavesGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    wavesGroup.setAttribute('transform', `translate(${dogCenterX}, ${dogCenterY})`);
+    
+    // Draw multiple concentric gravity wave rings
+    const numRings = 4;
+    const baseRadius = 100;
+    const ringSpacing = 40;
+    
+    for (let i = 0; i < numRings; i++) {
+      const ringIndex = i;
+      const radius = baseRadius + ringSpacing * i;
+      const phase = waveAnimationTime + (ringIndex * 0.5); // Stagger phases
+      const amplitude = 8 + Math.sin(phase) * 3; // Pulsing amplitude
+      const currentRadius = radius + Math.sin(phase * 2) * amplitude;
+      
+      // Create wave ring with distortion
+      const waveRing = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      waveRing.setAttribute('cx', '0');
+      waveRing.setAttribute('cy', '0');
+      waveRing.setAttribute('r', currentRadius);
+      waveRing.setAttribute('fill', 'none');
+      waveRing.setAttribute('stroke', 'url(#waveRingGradient)');
+      waveRing.setAttribute('stroke-width', '2');
+      waveRing.setAttribute('opacity', 0.6 - (ringIndex * 0.12));
+      wavesGroup.appendChild(waveRing);
+      
+      // Add wavy distortion to the ring
+      const numPoints = 32;
+      const wavePath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      let pathData = '';
+      
+      for (let j = 0; j <= numPoints; j++) {
+        const angle = (j / numPoints) * Math.PI * 2;
+        const waveOffset = Math.sin(angle * 3 + phase * 2) * 5;
+        const pointRadius = currentRadius + waveOffset;
+        const x = Math.cos(angle) * pointRadius;
+        const y = Math.sin(angle) * pointRadius;
+        
+        if (j === 0) {
+          pathData += `M ${x} ${y}`;
+        } else {
+          pathData += ` L ${x} ${y}`;
+        }
+      }
+      pathData += ' Z';
+      
+      wavePath.setAttribute('d', pathData);
+      wavePath.setAttribute('fill', 'none');
+      wavePath.setAttribute('stroke', `rgba(139, 92, 246, ${0.5 - ringIndex * 0.1})`);
+      wavePath.setAttribute('stroke-width', '1.5');
+      wavePath.setAttribute('opacity', 0.4 - (ringIndex * 0.08));
+      wavesGroup.appendChild(wavePath);
+    }
+    
+    // Central gravity well glow
+    const gravityWell = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    gravityWell.setAttribute('cx', '0');
+    gravityWell.setAttribute('cy', '0');
+    gravityWell.setAttribute('r', baseRadius * 0.6 + Math.sin(waveAnimationTime * 2) * 10);
+    gravityWell.setAttribute('fill', 'url(#gravityWaveGradient)');
+    gravityWell.setAttribute('opacity', 0.4 + Math.sin(waveAnimationTime) * 0.2);
+    wavesGroup.appendChild(gravityWell);
+    
+    // Add smaller ripples for detail
+    for (let i = 0; i < 3; i++) {
+      const ripplePhase = waveAnimationTime + i * 0.8;
+      const rippleRadius = 30 + Math.sin(ripplePhase) * 15;
+      const ripple = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      ripple.setAttribute('cx', '0');
+      ripple.setAttribute('cy', '0');
+      ripple.setAttribute('r', rippleRadius);
+      ripple.setAttribute('fill', 'none');
+      ripple.setAttribute('stroke', `rgba(139, 92, 246, ${0.3 - i * 0.1})`);
+      ripple.setAttribute('stroke-width', '1');
+      ripple.setAttribute('opacity', 0.5 - (rippleRadius / 100));
+      wavesGroup.appendChild(ripple);
+    }
+    
+    gravityWavesGroup.appendChild(wavesGroup);
   }
   
   // Calculate original dog position based on container
@@ -700,85 +816,17 @@
     updateLeash();
   }
   
-  // Update leash line
-  // Function to draw a single chain link
-  function drawChainLink(x, y, angle, size, isAlternating) {
-    const link = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    const rotationDeg = (angle * 180 / Math.PI) + (isAlternating ? 90 : 0);
-    link.setAttribute('transform', `translate(${x}, ${y}) rotate(${rotationDeg})`);
-    
-    // Chain link dimensions
-    const linkWidth = size * 0.75;
-    const linkHeight = size * 0.5;
-    const thickness = size * 0.22;
-    
-    // Main link body - outer ellipse with silver gradient
-    const outerLink = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
-    outerLink.setAttribute('cx', '0');
-    outerLink.setAttribute('cy', '0');
-    outerLink.setAttribute('rx', linkWidth);
-    outerLink.setAttribute('ry', linkHeight);
-    outerLink.setAttribute('fill', 'url(#silverGradient)');
-    outerLink.setAttribute('stroke', '#707070');
-    outerLink.setAttribute('stroke-width', thickness * 0.3);
-    
-    // Inner hole
-    const innerHole = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
-    innerHole.setAttribute('cx', '0');
-    innerHole.setAttribute('cy', '0');
-    innerHole.setAttribute('rx', linkWidth * 0.55);
-    innerHole.setAttribute('ry', linkHeight * 0.55);
-    innerHole.setAttribute('fill', 'url(#silverShadow)');
-    
-    // Opening in the link (for connecting to next link)
-    if (!isAlternating) {
-      const opening = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-      opening.setAttribute('x', linkWidth * 0.7);
-      opening.setAttribute('y', -linkHeight * 0.3);
-      opening.setAttribute('width', linkWidth * 0.3);
-      opening.setAttribute('height', linkHeight * 0.6);
-      opening.setAttribute('fill', '#202020');
-      opening.setAttribute('rx', thickness * 0.3);
-      link.appendChild(opening);
-    }
-    
-    // Top highlight for metallic shine
-    const highlight = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
-    highlight.setAttribute('cx', linkWidth * -0.25);
-    highlight.setAttribute('cy', linkHeight * -0.35);
-    highlight.setAttribute('rx', linkWidth * 0.3);
-    highlight.setAttribute('ry', linkHeight * 0.25);
-    highlight.setAttribute('fill', 'rgba(255, 255, 255, 0.6)');
-    
-    // Bottom shadow
-    const shadow = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
-    shadow.setAttribute('cx', linkWidth * 0.25);
-    shadow.setAttribute('cy', linkHeight * 0.35);
-    shadow.setAttribute('rx', linkWidth * 0.3);
-    shadow.setAttribute('ry', linkHeight * 0.25);
-    shadow.setAttribute('fill', 'rgba(0, 0, 0, 0.3)');
-    
-    link.appendChild(outerLink);
-    link.appendChild(innerHole);
-    link.appendChild(highlight);
-    link.appendChild(shadow);
-    
-    return link;
-  }
-  
   function updateLeash() {
-    // Hide leash on small screens (same behavior as dog)
+    // Update gravity waves
+    updateGravityWaves();
+    
+    // Hide on small screens (same behavior as dog)
     if (isSmallScreen()) {
-      leashSvg.style.cssText = 'opacity: 0 !important; visibility: hidden !important; display: none !important; transition: none !important;';
-      leashChain.innerHTML = '';
       return;
     }
     
-    // Check leash state and update visibility immediately
+    // Check leash state
     if (!isLeashed) {
-      // Completely hide leash when unleashed
-      leashSvg.style.cssText = 'opacity: 0 !important; visibility: hidden !important; display: none !important; transition: none !important;';
-      leashChain.innerHTML = '';
       // Reset dog scale when not leashed, but preserve orientation
       // Dog faces cursor: if cursor on right, face right (flip); if on left, face left (default)
       const dogRect = dog.getBoundingClientRect();
@@ -793,78 +841,19 @@
       return;
     }
     
-    // Leash is on - make it visible
-    leashSvg.style.cssText = 'opacity: 1 !important; visibility: visible !important; display: block !important; transition: opacity 0.3s ease !important;';
-    
-    const leashPoint = getLeashAttachmentPoint();
+    // Leashed - dog is stuck, show gravity waves
+    // Determine orientation based on cursor position
     const dogRect = dog.getBoundingClientRect();
     const dogCenterX = dogRect.left + dogRect.width / 2;
-    const dogCenterY = dogRect.top + dogRect.height / 2;
-    
-    // Calculate distance between dog and leash attachment point
-    const dx = dogCenterX - leashPoint.x;
-    const dy = dogCenterY - leashPoint.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    
-    // Dynamic scaling: closer to attachment = smaller, farther = larger
-    // Base scale at max distance, scale down as distance decreases
-    const maxDistance = 400; // Maximum expected distance
-    const minScale = 0.5; // Minimum scale (when very close)
-    const maxScale = 1.0; // Maximum scale (when far)
-    
-    // Calculate scale based on distance (inverse relationship)
-    const normalizedDistance = Math.min(distance / maxDistance, 1);
-    const scale = minScale + (maxScale - minScale) * normalizedDistance;
-    
-    // Determine orientation based on cursor position
-    // Dog faces cursor: if cursor on right, face right (flip); if on left, face left (default)
     const cursorOnRight = mouseX > dogCenterX;
     
-    // Apply scale and orientation together
+    // Apply orientation (no scaling when leashed - dog is stuck)
     if (cursorOnRight) {
       // Cursor on right - face left (default)
-      dog.style.transform = `scale(${scale})`;
+      dog.style.transform = 'scaleX(1)';
     } else {
       // Cursor on left - flip to face right
-      dog.style.transform = `scaleX(-${scale}) scaleY(${scale})`;
-    }
-    
-    // Update leash SVG position and size
-    leashSvg.style.position = 'fixed';
-    leashSvg.style.top = '0';
-    leashSvg.style.left = '0';
-    leashSvg.style.width = '100%';
-    leashSvg.style.height = '100%';
-    leashSvg.style.pointerEvents = 'none';
-    leashSvg.style.zIndex = '900'; // Below dog, above stars
-    
-    // Clear existing chain links
-    leashChain.innerHTML = '';
-    
-    // Calculate angle of the leash
-    const angle = Math.atan2(dy, dx);
-    
-    // Dynamic chain link size based on distance (thinner when stretched)
-    const minLinkSize = 8;
-    const maxLinkSize = 14;
-    const linkSize = minLinkSize + (maxLinkSize - minLinkSize) * (1 - normalizedDistance);
-    
-    // Calculate number of links based on distance
-    const linkSpacing = linkSize * 1.2; // Spacing between link centers
-    const numLinks = Math.max(3, Math.floor(distance / linkSpacing));
-    
-    // Draw chain links along the path
-    for (let i = 0; i <= numLinks; i++) {
-      const t = i / numLinks;
-      const x = leashPoint.x + dx * t;
-      const y = leashPoint.y + dy * t;
-      
-      // Alternate link orientation for interlocking chain effect
-      const isAlternating = i % 2 === 1;
-      const linkAngle = angle + (isAlternating ? Math.PI / 2 : 0);
-      
-      const link = drawChainLink(x, y, linkAngle, linkSize, isAlternating);
-      leashChain.appendChild(link);
+      dog.style.transform = 'scaleX(-1)';
     }
   }
   
@@ -1265,18 +1254,13 @@
   // Animate leash and dog orientation
   function animate() {
     updateDogPosition();
-    // Update leash based on state (hide during zoomies mode)
+    // Update leash/gravity waves based on state (hide during zoomies mode)
     if (isLeashed && !isSmallScreen() && !isZoomiesMode) {
-      // Leashed - show and update leash (only if not on small screen and not in zoomies)
+      // Leashed - show and update gravity waves
       updateLeash();
-      // Double-check leash is visible (in case updateLeash didn't set it)
-      leashSvg.style.cssText = 'opacity: 1 !important; visibility: visible !important; display: block !important;';
     } else {
-      // Ensure leash stays hidden when unleashed or in zoomies - completely remove it from rendering
-      leashSvg.style.cssText = 'opacity: 0 !important; visibility: hidden !important; display: none !important; pointer-events: none !important;';
-      // Clear chain links completely
-      leashChain.innerHTML = '';
-      // Note: Dog orientation is already updated in updateDogPosition() for unleashed mode
+      // Unleashed or zoomies - hide gravity waves
+      updateLeash(); // This will hide waves when unleashed
     }
     requestAnimationFrame(animate);
   }
