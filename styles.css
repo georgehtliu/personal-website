@@ -184,6 +184,38 @@ body.zoomies-mode::before {
     radial-gradient(circle at 80% 70%, rgba(155, 181, 255, 0.006) 0%, transparent 50%);
 }
 
+/* Galaxy Spiral */
+.galaxy-spiral {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1; /* Behind stars but above background */
+  opacity: 0.15;
+}
+
+/* Galaxy spiral rotation handled by JavaScript animation */
+
+/* Warp Speed Lines */
+.warp-speed-lines {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 500; /* Above background, below content */
+  overflow: hidden;
+}
+
+.warp-line {
+  position: absolute;
+  pointer-events: none;
+  transition: opacity 0.2s ease-out;
+}
+
 .star,
 .planet,
 .spaceship {
@@ -201,6 +233,14 @@ body.zoomies-mode::before {
 
 .planet {
   animation-duration: 180s; /* Planets move slower than stars */
+}
+
+/* Planet Shadows */
+.planet-shadow {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  animation: drift-left 180s linear infinite;
+  pointer-events: none;
 }
 
 .spaceship {

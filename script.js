@@ -208,11 +208,28 @@
     const colorIndex = Math.floor(Math.random() * planetColors.length);
     planet.style.color = planetColors[colorIndex];
     
+    // Add planet shadow (cast downward)
+    const shadow = document.createElement('div');
+    shadow.className = 'planet-shadow';
+    shadow.style.width = size * 1.2 + 'px';
+    shadow.style.height = size * 0.3 + 'px';
+    shadow.style.left = x + '%';
+    shadow.style.top = (y + size / 100 * 50) + '%'; // Position below planet
+    shadow.style.opacity = opacity * 0.3;
+    shadow.style.background = `radial-gradient(ellipse, rgba(0, 0, 0, 0.4) 0%, transparent 70%)`;
+    shadow.style.borderRadius = '50%';
+    shadow.style.transform = 'translate(-50%, -50%)';
+    shadow.style.pointerEvents = 'none';
+    shadow.style.zIndex = '-1'; // Behind planet
+    shadow.style.position = 'absolute';
+    
     // Add random animation delay for natural movement
     const baseDelay = x < 50 ? Math.random() * 30 : Math.random() * 60;
     planet.style.animationDelay = `-${baseDelay}s`;
+    shadow.style.animationDelay = `-${baseDelay}s`;
     
     starsContainer.appendChild(planet);
+    starsContainer.appendChild(shadow);
   }
   
   // Generate spaceships
@@ -408,13 +425,13 @@
     starsContainer.appendChild(nebula);
   }
   
-  // Generate asteroids/comets
-  const asteroidCount = 4;
+  // Generate asteroid field - many more asteroids
+  const asteroidCount = 25; // Increased from 4 to create a field
   for (let i = 0; i < asteroidCount; i++) {
     const asteroid = document.createElement('div');
     asteroid.className = 'asteroid';
     
-    const size = Math.random() * 15 + 10; // 10-25px
+    const size = Math.random() * 12 + 6; // 6-18px (smaller for field effect)
     const x = Math.random() * 200 - 50;
     const y = Math.random() * 100;
     
@@ -422,8 +439,15 @@
     asteroid.style.height = size + 'px';
     asteroid.style.left = x + '%';
     asteroid.style.top = y + '%';
-    asteroid.style.opacity = Math.random() * 0.4 + 0.3;
-    asteroid.style.borderRadius = '30% 70% 70% 30% / 30% 30% 70% 70%'; // Irregular shape
+    asteroid.style.opacity = Math.random() * 0.5 + 0.2; // Varying opacity
+    // More varied irregular shapes
+    const shapeVariations = [
+      '30% 70% 70% 30% / 30% 30% 70% 70%',
+      '50% 50% 50% 50% / 60% 40% 60% 40%',
+      '40% 60% 60% 40% / 50% 50% 50% 50%',
+      '25% 75% 75% 25% / 40% 60% 40% 60%'
+    ];
+    asteroid.style.borderRadius = shapeVariations[Math.floor(Math.random() * shapeVariations.length)];
     asteroid.style.background = `radial-gradient(circle, rgba(139, 92, 246, 0.6) 0%, rgba(76, 29, 149, 0.4) 100%)`;
     asteroid.style.boxShadow = `0 0 ${size / 2}px rgba(139, 92, 246, 0.5)`;
     
@@ -618,6 +642,166 @@
   }
   
   startSolarFlares();
+  
+  // Create galaxy spiral
+  (function() {
+    const galaxySvg = document.querySelector('.galaxy-spiral');
+    const galaxyGroup = document.querySelector('.galaxy-spiral-group');
+    if (!galaxySvg || !galaxyGroup) return;
+    
+    // Set up galaxy SVG
+    galaxySvg.style.position = 'fixed';
+    galaxySvg.style.top = '0';
+    galaxySvg.style.left = '0';
+    galaxySvg.style.width = '100%';
+    galaxySvg.style.height = '100%';
+    galaxySvg.style.pointerEvents = 'none';
+    galaxySvg.style.zIndex = '1'; // Behind stars but above background
+    galaxySvg.style.opacity = '0.15'; // Very subtle
+    
+    // Create spiral arms
+    const centerX = window.innerWidth * 0.2; // Position in upper left
+    const centerY = window.innerHeight * 0.2;
+    const numArms = 2;
+    const maxRadius = Math.max(window.innerWidth, window.innerHeight) * 0.8;
+    
+    for (let arm = 0; arm < numArms; arm++) {
+      const spiralPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      let pathData = '';
+      const points = 100;
+      const armOffset = (arm * Math.PI) / numArms;
+      
+      for (let i = 0; i <= points; i++) {
+        const t = i / points;
+        const angle = t * Math.PI * 4 + armOffset; // 2 full rotations
+        const radius = t * maxRadius;
+        const x = Math.cos(angle) * radius; // Relative to center
+        const y = Math.sin(angle) * radius; // Relative to center
+        
+        if (i === 0) {
+          pathData += `M ${x} ${y}`;
+        } else {
+          pathData += ` L ${x} ${y}`;
+        }
+      }
+      
+      spiralPath.setAttribute('d', pathData);
+      spiralPath.setAttribute('fill', 'none');
+      spiralPath.setAttribute('stroke', 'url(#galaxyGradient)');
+      spiralPath.setAttribute('stroke-width', '2');
+      spiralPath.setAttribute('opacity', '0.3');
+      
+      galaxyGroup.appendChild(spiralPath);
+    }
+    
+    // Add central glow
+    const centerGlow = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    centerGlow.setAttribute('cx', '0');
+    centerGlow.setAttribute('cy', '0');
+    centerGlow.setAttribute('r', '80');
+    centerGlow.setAttribute('fill', 'url(#galaxyGradient)');
+    centerGlow.setAttribute('opacity', '0.2');
+    galaxyGroup.appendChild(centerGlow);
+    
+    // Animate rotation
+    let rotationAngle = 0;
+    function animateGalaxy() {
+      rotationAngle += 0.3; // Slow rotation
+      if (rotationAngle >= 360) rotationAngle -= 360;
+      galaxyGroup.setAttribute('transform', `translate(${centerX}, ${centerY}) rotate(${rotationAngle})`);
+      requestAnimationFrame(animateGalaxy);
+    }
+    animateGalaxy();
+  })();
+  
+  // Warp speed lines on fast scroll
+  (function() {
+    const warpLinesContainer = document.getElementById('warp-speed-lines');
+    if (!warpLinesContainer) return;
+    
+    let lastScrollY = window.scrollY;
+    let scrollVelocity = 0;
+    let lastScrollTime = performance.now();
+    const scrollThreshold = 8; // pixels per frame to trigger warp lines (increased for less frequent appearance)
+    const maxLines = 8; // Reduced from 20 for subtlety
+    let activeLines = [];
+    
+    function updateWarpLines() {
+      const now = performance.now();
+      const deltaTime = (now - lastScrollTime) / 1000;
+      lastScrollTime = now;
+      
+      const currentScrollY = window.scrollY;
+      scrollVelocity = Math.abs(currentScrollY - lastScrollY) / deltaTime;
+      lastScrollY = currentScrollY;
+      
+      // Clear old lines
+      activeLines = activeLines.filter(line => {
+        if (line.element && line.element.parentNode) {
+          const opacity = parseFloat(line.element.style.opacity) || 1;
+          if (opacity <= 0) {
+            line.element.remove();
+            return false;
+          }
+          return true;
+        }
+        return false;
+      });
+      
+      // Create warp lines if scrolling fast
+      if (scrollVelocity > scrollThreshold && activeLines.length < maxLines) {
+        const line = document.createElement('div');
+        line.className = 'warp-line';
+        
+        const startX = Math.random() * window.innerWidth;
+        const startY = Math.random() * window.innerHeight;
+        const angle = Math.random() * Math.PI * 2;
+        const length = 100 + Math.random() * 200;
+        
+        line.style.left = startX + 'px';
+        line.style.top = startY + 'px';
+        line.style.width = length + 'px';
+        line.style.height = '1px'; // Thinner line
+        line.style.background = `linear-gradient(90deg, 
+          transparent 0%, 
+          rgba(139, 92, 246, 0.25) 20%, 
+          rgba(255, 255, 255, 0.35) 50%, 
+          rgba(139, 92, 246, 0.25) 80%, 
+          transparent 100%)`;
+        line.style.transform = `rotate(${angle * 180 / Math.PI}deg)`;
+        line.style.transformOrigin = 'left center';
+        line.style.opacity = '0.3'; // Much more subtle
+        line.style.boxShadow = `0 0 5px rgba(139, 92, 246, 0.2)`; // Softer glow
+        
+        warpLinesContainer.appendChild(line);
+        
+        // Animate line
+        const startTime = performance.now();
+        const duration = 300 + Math.random() * 200;
+        
+        function animateLine() {
+          const elapsed = performance.now() - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+          
+          line.style.opacity = (0.3 * (1 - progress)).toString(); // Match initial subtle opacity
+          line.style.transform = `rotate(${angle * 180 / Math.PI}deg) translateX(${progress * 200}px)`;
+          
+          if (progress < 1) {
+            requestAnimationFrame(animateLine);
+          } else {
+            line.remove();
+          }
+        }
+        
+        activeLines.push({ element: line, startTime });
+        requestAnimationFrame(animateLine);
+      }
+      
+      requestAnimationFrame(updateWarpLines);
+    }
+    
+    updateWarpLines();
+  })();
 })();
 
 // Typewriter Effect
