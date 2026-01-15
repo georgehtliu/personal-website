@@ -922,9 +922,17 @@ body.zoomies-mode::before {
   image-rendering: auto;
   display: block;
   background: transparent;
-  /* Note: For true transparency, the GIF file itself needs a transparent background.
-     CSS blend modes can help but won't fully remove solid backgrounds from GIFs. */
+}
+
+/* Sleeping dog gif now has transparent background */
+.dog-img.dog-sleeping {
+  mix-blend-mode: normal;
+  filter: none;
+}
+
+.dog-img.dog-awake {
   mix-blend-mode: screen;
+  filter: none;
 }
 
 

@@ -1305,12 +1305,58 @@
   // Initialize sleep bubbles on load
   updateSleepBubbles();
   
+  // Track current dog image state to avoid unnecessary updates
+  let currentDogImageState = null;
+  
+  // Update dog image based on leash state
+  function updateDogImage() {
+    if (!dog) return;
+    
+    // Only update if the state has changed
+    const newState = isLeashed ? 'sleeping' : 'awake';
+    if (currentDogImageState === newState) {
+      return; // No change needed, let GIF continue animating
+    }
+    
+    currentDogImageState = newState;
+    
+    if (isLeashed) {
+      // Use sleeping gif when leashed (now has transparent background)
+      const newSrc = 'dog-sleeping.gif';
+      // Only update src if it's different (prevents restarting animation)
+      if (!dog.src || !dog.src.includes(newSrc)) {
+        dog.src = newSrc;
+      }
+      dog.style.mixBlendMode = 'normal'; // Normal blend mode since gif is transparent
+      dog.style.filter = 'none';
+      dog.classList.add('dog-sleeping');
+      dog.classList.remove('dog-awake');
+    } else {
+      // Use normal gif when unleashed
+      const newSrc = 'space-dog.gif';
+      // Only update src if it's different (prevents restarting animation)
+      if (!dog.src || !dog.src.includes(newSrc)) {
+        dog.src = newSrc;
+      }
+      dog.style.mixBlendMode = 'screen'; // Restore blend mode for space dog
+      dog.style.filter = 'none';
+      dog.classList.add('dog-awake');
+      dog.classList.remove('dog-sleeping');
+    }
+  }
+  
+  // Initialize dog image on load
+  updateDogImage();
+  
   function updateLeash() {
     // Update gravity waves
     updateGravityWaves();
     
     // Update sleep bubbles
     updateSleepBubbles();
+    
+    // Update dog image (sleeping vs normal)
+    updateDogImage();
     
     // Hide on small screens (same behavior as dog)
     if (isSmallScreen()) {
@@ -1334,19 +1380,8 @@
     }
     
     // Leashed - dog is stuck, show gravity waves
-    // Determine orientation based on cursor position
-    const dogRect = dog.getBoundingClientRect();
-    const dogCenterX = dogRect.left + dogRect.width / 2;
-    const cursorOnRight = mouseX > dogCenterX;
-    
-    // Apply orientation (no scaling when leashed - dog is stuck)
-    if (cursorOnRight) {
-      // Cursor on right - face left (default)
-      dog.style.transform = 'scaleX(1)';
-    } else {
-      // Cursor on left - flip to face right
-      dog.style.transform = 'scaleX(-1)';
-    }
+    // Keep dog in default orientation (no flipping when leashed)
+    dog.style.transform = 'scaleX(1)';
   }
   
   
@@ -1704,33 +1739,17 @@
     dogContainer.style.left = (dogX - dogOffset) + 'px';
     dogContainer.style.top = (dogY - dogOffset) + 'px';
     
-    // Update dog orientation based on cursor position (for all modes)
-    // Dog faces cursor: if cursor on right, face right (flip); if on left, face left (default)
-    // Get current mouse position (use global tracker)
-    getMousePosition();
-    const dogRect = dog.getBoundingClientRect();
-    const dogCenterX = dogRect.left + dogRect.width / 2;
-    const currentTransform = dog.style.transform || '';
-    
-    // Extract scale values if they exist (for leashed mode)
-    const scaleMatch = currentTransform.match(/scale[XY]?\([^)]+\)/g);
-    const hasScale = scaleMatch && scaleMatch.length > 0;
-    
-    // Determine cursor position relative to dog
-    const cursorOnRight = mouseX > dogCenterX;
-    
-    if (isLeashed && hasScale) {
-      // Leashed mode - preserve scale, just update orientation
-      const scale = currentTransform.match(/scaleX\(-?([\d.]+)\)/)?.[1] || 
-                   currentTransform.match(/scale\(([\d.]+)\)/)?.[1] || '1';
-      if (cursorOnRight) {
-        // Cursor on right - face left (default)
-        dog.style.transform = `scale(${scale})`;
-      } else {
-        // Cursor on left - flip to face right
-        dog.style.transform = `scaleX(-${scale}) scaleY(${scale})`;
-      }
-    } else {
+    // Update dog orientation based on cursor position (only when unleashed)
+    if (!isLeashed) {
+      // Dog faces cursor: if cursor on right, face right (flip); if on left, face left (default)
+      // Get current mouse position (use global tracker)
+      getMousePosition();
+      const dogRect = dog.getBoundingClientRect();
+      const dogCenterX = dogRect.left + dogRect.width / 2;
+      
+      // Determine cursor position relative to dog
+      const cursorOnRight = mouseX > dogCenterX;
+      
       // Unleashed mode (including play mode) - simple orientation flip
       // Always update orientation based on cursor position
       if (cursorOnRight) {
@@ -1741,6 +1760,7 @@
         dog.style.transform = 'scaleX(-1)';
       }
     }
+    // When leashed, orientation is handled in updateLeash() - no flipping
   }
   
   // Animate leash and dog orientation
