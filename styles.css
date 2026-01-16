@@ -996,6 +996,21 @@ body.effects-hidden .gravity-waves-svg {
   background: rgba(232, 90, 43, 0.15);
 }
 
+/* Journey Section */
+.journey {
+  max-width: clamp(42rem, 80vw, 64rem);
+  margin: 0 auto 1rem;
+  padding: 0 var(--container-padding);
+}
+
+.journey-title {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0;
+  font-family: var(--font-body);
+}
+
 /* Timeline Section */
 .timeline {
   max-width: clamp(42rem, 80vw, 64rem);
